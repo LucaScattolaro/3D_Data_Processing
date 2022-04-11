@@ -210,6 +210,60 @@ namespace pm {
     //to check if x and y values are valid use the function:
     // bool inside(int x, int y, int lbx, int lby, int ubx, int uby)
     //lbx=0, lby=0, ubx=cols_, uby=rows_
+    int nx,ny;
+    vector<pair<float, float>> disp_cost;
+
+    //--push in teh vector the current disp and cost values
+    disp_cost.push_back(make_pair(disps_[cpv](y, x), costs_[cpv](y, x)));
+
+
+    //--Check the iteration if is even (to choose the 2 neighbours)
+    if(iter%2==0)
+    {
+      nx=x-1;
+      ny=y-1;
+    }
+    else
+    {
+      nx=x+1;
+      ny=y+1;
+    }
+
+    if(inside( nx,  y, 0,  0,  cols_,  rows_))
+    {
+      float new_disp = disps_[cpv](y, nx);
+      float new_cost = precomputed_disp_match_cost(new_disp, x, y, 0);
+      disp_cost.push_back(make_pair(new_disp, new_cost));
+    }
+    if(inside( x,  ny, 0,  0,  cols_,  rows_))
+    {
+      float new_disp = disps_[cpv](ny, x);
+      float new_cost = precomputed_disp_match_cost(new_disp, x, y, 0);
+      disp_cost.push_back(make_pair(new_disp, new_cost));
+    }
+
+
+    //--find the minimum among all the values of the neighbours
+    float minCost=disp_cost[0].second;
+    float disparityValue=disp_cost[0].first;
+    int indexMin=0;
+    for(int i=1;i<disp_cost.size();i++)
+    {
+      if(disp_cost[i].second<minCost)
+      {
+        minCost=disp_cost[i].second;
+        disparityValue=disp_cost[i].first;
+        indexMin=i;
+      }
+    }
+
+    //--Update the value
+    if(indexMin!=0)
+    {
+      disps_[cpv](y, x)=disparityValue;
+      costs_[cpv](y, x)=minCost;
+    }
+
 
   }
 
@@ -236,6 +290,9 @@ namespace pm {
     // bool inside(int x, int y, int lbx, int lby, int ubx, int uby)
     //lbx=0, lby=0, ubx=cols_, uby=rows_
 
+
+    
+
   }
 
 
@@ -250,13 +307,19 @@ namespace pm {
 
     //CLASS VARIABLE TO USE:
     //disps-->disparities, to access use disps_[cpv].at<float>(y, x)
-    //costs-->costs, to access use disps_[cpv].at<float>(y, x)
+    //costs-->costs, to access use costs_[cpv].at<float>(y, x)
 
     //Given the inputs the function should perturb the disparity at position (x,y) by a factor of delta_z
     //(i.e. new disparity(x,y) = old disparity(x,y) + delta_z), use max_delta_z and end_dz parameters to cycle between
     // different delta_z (free to choose how to do)
 
     //to compute costs use precomputed_disp_match_cost
+
+    //--Random delta_z
+    float delta_z=(max_delta_z-end_dz)/2+end_dz; //end_dz + ( rand() % ( max_delta_z - end_dz + 1 ) );
+    disps_[cpv].at<float>(y, x)=disps_[cpv].at<float>(y, x)+delta_z;
+    costs_[cpv].at<float>(y, x)=precomputed_disp_match_cost(disps_[cpv].at<float>(y, x), x, y, 0);
+
 
   }
 
