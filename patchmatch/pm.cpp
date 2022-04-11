@@ -9,9 +9,12 @@
 
 using namespace std;
 
-namespace pm {
 
-  void compute_greyscale_gradient(const ::cv::Mat3b &frame, cv::Mat2f &grad) {
+namespace pm
+{
+
+  void compute_greyscale_gradient(const ::cv::Mat3b &frame, cv::Mat2f &grad)
+  {
     int scale = 1, delta = 0;
     cv::Mat gray, x_grad, y_grad;
 
@@ -21,20 +24,21 @@ namespace pm {
     x_grad = x_grad / 8.f;
     y_grad = y_grad / 8.f;
 
-    for (int y = 0; y < frame.rows; ++y) {
-      for (int x = 0; x < frame.cols; ++x) {
+    for (int y = 0; y < frame.rows; ++y)
+    {
+      for (int x = 0; x < frame.cols; ++x)
+      {
         grad(y, x)[0] = x_grad.at<float>(y, x);
         grad(y, x)[1] = y_grad.at<float>(y, x);
       }
     }
   }
 
-
   PatchMatch::PatchMatch(float alpha, float gamma, float tau_c, float tau_g)
-          : alpha_(alpha), gamma_(gamma), tau_c_(tau_c), tau_g_(tau_g) {}
+      : alpha_(alpha), gamma_(gamma), tau_c_(tau_c), tau_g_(tau_g) {}
 
-
-  float PatchMatch::dissimilarity(const cv::Vec3f &pp, const cv::Vec3f &qq, const cv::Vec2f &pg, const cv::Vec2f &qg) {
+  float PatchMatch::dissimilarity(const cv::Vec3f &pp, const cv::Vec3f &qq, const cv::Vec2f &pg, const cv::Vec2f &qg)
+  {
     float cost_c = cv::norm(pp - qq, cv::NORM_L1);
     float cost_g = cv::norm(pg - qg, cv::NORM_L1);
     cost_c = std::min(cost_c, tau_c_);
@@ -44,64 +48,71 @@ namespace pm {
 
   void PatchMatch::precomputeCostVolume(int ws, int cpv)
   {
-    volumes_[cpv].resize(MAX_DISPARITY+1);
-    for (int d=0; d<=MAX_DISPARITY; ++d)
+    volumes_[cpv].resize(MAX_DISPARITY + 1);
+    for (int d = 0; d <= MAX_DISPARITY; ++d)
     {
-      std::cout<<"prepr d: "<<d<<std::endl;
-      volumes_[cpv][d]=cv::Mat1f(rows_, cols_);
+      std::cout << "prepr d: " << d << std::endl;
+      volumes_[cpv][d] = cv::Mat1f(rows_, cols_);
 #pragma omp parallel for
       for (int y = 0; y < rows_; ++y)
       {
         for (int x = 0; x < cols_; ++x)
         {
-          float cost=disp_match_cost((float) d, x,y,ws,cpv);
-          volumes_[cpv][d].at<float>(y,x)=cost;
+          float cost = disp_match_cost((float)d, x, y, ws, cpv);
+          volumes_[cpv][d].at<float>(y, x) = cost;
         }
       }
     }
 
-    std::stringstream name; name<<"cost_volume"<<cpv<<".bin";
-    std::ofstream f_vol(name.str(), ios::out | ios::binary ); 
-    f_vol<<rows_<<endl<<cols_<<endl<<MAX_DISPARITY<<endl;
-    for (int d=0; d<=MAX_DISPARITY; ++d)
+    std::stringstream name;
+    name << "cost_volume" << cpv << ".bin";
+    std::ofstream f_vol(name.str(), ios::out | ios::binary);
+    f_vol << rows_ << endl
+          << cols_ << endl
+          << MAX_DISPARITY << endl;
+    for (int d = 0; d <= MAX_DISPARITY; ++d)
       for (int y = 0; y < rows_; ++y)
         for (int x = 0; x < cols_; ++x)
         {
-          float cost=volumes_[cpv][d].at<float>(y,x);
-          f_vol<<cost<<endl;
+          float cost = volumes_[cpv][d].at<float>(y, x);
+          f_vol << cost << endl;
         }
     f_vol.close();
   }
 
   void PatchMatch::loadPrecomputedCostVolumes(std::string dir)
   {
-    for(int i=0; i<2; ++i)
+    for (int i = 0; i < 2; ++i)
     {
-      std::stringstream name; name<<dir<<"/cost_volume"<<i<<".bin";
-      std::ifstream f_vol(name.str(), ios::in | ios::binary); 
-      int rows; f_vol>>rows;
-      int cols; f_vol>>cols;
-      int max_d; f_vol>>max_d;
-  
-      volumes_[i].resize(max_d+1);
-      for (int d=0; d<=max_d; ++d)
+      std::stringstream name;
+      name << dir << "/cost_volume" << i << ".bin";
+      std::ifstream f_vol(name.str(), ios::in | ios::binary);
+      int rows;
+      f_vol >> rows;
+      int cols;
+      f_vol >> cols;
+      int max_d;
+      f_vol >> max_d;
+
+      volumes_[i].resize(max_d + 1);
+      for (int d = 0; d <= max_d; ++d)
       {
-        volumes_[i][d]=cv::Mat1f(rows, cols);
+        volumes_[i][d] = cv::Mat1f(rows, cols);
         for (int y = 0; y < rows; ++y)
           for (int x = 0; x < cols; ++x)
           {
-            float cost; f_vol>>cost;
-            volumes_[i][d].at<float>(y,x)=cost;
-            
+            float cost;
+            f_vol >> cost;
+            volumes_[i][d].at<float>(y, x) = cost;
           }
       }
       f_vol.close();
     }
   }
 
-
   // aggregated matchig cost for a pixel
-  float PatchMatch::disp_match_cost(float dsp, int cx, int cy, int ws, int cpv) {
+  float PatchMatch::disp_match_cost(float dsp, int cx, int cy, int ws, int cpv)
+  {
     int sign = -1 + 2 * cpv;
 
     float cost = 0;
@@ -112,18 +123,23 @@ namespace pm {
     const cv::Mat2f &g1 = grads_[cpv];
     const cv::Mat2f &g2 = grads_[1 - cpv];
     const cv::Mat &w1 = weigs_[cpv];
-    
-    for (int x = cx - half; x <= cx + half; ++x) {
-      for (int y = cy - half; y <= cy + half; ++y) {
+
+    for (int x = cx - half; x <= cx + half; ++x)
+    {
+      for (int y = cy - half; y <= cy + half; ++y)
+      {
         if (!inside(x, y, 0, 0, f1.cols, f1.rows))
           continue;
 
-        if (dsp < 0 || dsp > MAX_DISPARITY) {
+        if (dsp < 0 || dsp > MAX_DISPARITY)
+        {
           cost += DISP_PENALTY;
-        } else {
+        }
+        else
+        {
           // find matching point in other view
           float match = x + sign * dsp;
-          int x_match = (int) match;
+          int x_match = (int)match;
 
           float wm = 1 - (match - x_match);
 
@@ -146,14 +162,16 @@ namespace pm {
   }
 
   // aggregated precomputed matchig cost for a pixel
-  float PatchMatch::precomputed_disp_match_cost(float dsp, int cx, int cy, int cpv) {
-    if (dsp < 0 || dsp > MAX_DISPARITY) 
+  float PatchMatch::precomputed_disp_match_cost(float dsp, int cx, int cy, int cpv)
+  {
+    if (dsp < 0 || dsp > MAX_DISPARITY)
       return 200000;
-    float ret=volumes_[cpv][(int)dsp].at<float>(cy,cx);
+    float ret = volumes_[cpv][(int)dsp].at<float>(cy, cx);
     return ret;
   }
 
-  void PatchMatch::precompute_pixels_weights(const cv::Mat3b &frame, cv::Mat &weights, int ws) {
+  void PatchMatch::precompute_pixels_weights(const cv::Mat3b &frame, cv::Mat &weights, int ws)
+  {
     int half = ws / 2;
 
 #pragma omp parallel for
@@ -168,163 +186,192 @@ namespace pm {
                                                                                                 gamma_);
   }
 
-
-  void PatchMatch::initialize_random_disps(cv::Mat1f &disps, float max_d) {
+  void PatchMatch::initialize_random_disps(cv::Mat1f &disps, float max_d)
+  {
     cv::RNG random_generator;
     const int RAND_HALF = RAND_MAX / 2;
 
-    for (int y = 0; y < rows_; ++y) {
-      for (int x = 0; x < cols_; ++x) {
+    for (int y = 0; y < rows_; ++y)
+    {
+      for (int x = 0; x < cols_; ++x)
+      {
         disps.at<float>(y, x) = random_generator.uniform(.0f, max_d); // random disparity
-
       }
     }
   }
 
-
-  void PatchMatch::evaluate_disps_cost(int cpv) {
+  void PatchMatch::evaluate_disps_cost(int cpv)
+  {
 #pragma omp parallel for
     for (int y = 0; y < rows_; ++y)
       for (int x = 0; x < cols_; ++x)
         costs_[cpv](y, x) = disp_match_cost(disps_[cpv].at<float>(y, x), x, y, WINDOW_SIZE, cpv);
   }
 
-
   // search for better disparity in the neighbourhood of a pixel
   // if iter is even then the function check the left and upper neighbours
   // if iter is odd then the function check the right and lower neighbours
-  void PatchMatch::spatial_propagation(int x, int y, int cpv, int iter) {
-    //INPUT:
-    //x --> x coordinate
-    //y --> y coordinate
-    //cpv --> flag for selecting data related to left or right view
-    //iter --> if iter is an odd number check for left or down else for right or up
+  void PatchMatch::spatial_propagation(int x, int y, int cpv, int iter)
+  {
+    // INPUT:
+    // x --> x coordinate
+    // y --> y coordinate
+    // cpv --> flag for selecting data related to left or right view
+    // iter --> if iter is an odd number check for left or down else for right or up
 
-    //CLASS VARIABLE TO USE:
-    //disps_-->disparities, to access use disps_[cpv].at<float>(y, x)
-    //costs_-->costs, to access use disps_[cpv].at<float>(y, x)
+    // CLASS VARIABLE TO USE:
+    // disps_-->disparities, to access use disps_[cpv].at<float>(y, x)
+    // costs_-->costs, to access use disps_[cpv].at<float>(y, x)
 
+    // to compute costs use precomputed_disp_match_cost
 
-    //to compute costs use precomputed_disp_match_cost
-
-    //to check if x and y values are valid use the function:
-    // bool inside(int x, int y, int lbx, int lby, int ubx, int uby)
-    //lbx=0, lby=0, ubx=cols_, uby=rows_
-    int nx,ny;
+    // to check if x and y values are valid use the function:
+    //  bool inside(int x, int y, int lbx, int lby, int ubx, int uby)
+    // lbx=0, lby=0, ubx=cols_, uby=rows_
+    int nx, ny;
     vector<pair<float, float>> disp_cost;
 
     //--push in teh vector the current disp and cost values
     disp_cost.push_back(make_pair(disps_[cpv](y, x), costs_[cpv](y, x)));
 
-
     //--Check the iteration if is even (to choose the 2 neighbours)
-    if(iter%2==0)
+    if (iter % 2 == 0)
     {
-      nx=x-1;
-      ny=y-1;
+      nx = x - 1;
+      ny = y - 1;
     }
     else
     {
-      nx=x+1;
-      ny=y+1;
+      nx = x + 1;
+      ny = y + 1;
     }
 
-    if(inside( nx,  y, 0,  0,  cols_,  rows_))
+    if (inside(nx, y, 0, 0, cols_, rows_))
     {
       float new_disp = disps_[cpv](y, nx);
       float new_cost = precomputed_disp_match_cost(new_disp, x, y, 0);
       disp_cost.push_back(make_pair(new_disp, new_cost));
     }
-    if(inside( x,  ny, 0,  0,  cols_,  rows_))
+    if (inside(x, ny, 0, 0, cols_, rows_))
     {
       float new_disp = disps_[cpv](ny, x);
       float new_cost = precomputed_disp_match_cost(new_disp, x, y, 0);
       disp_cost.push_back(make_pair(new_disp, new_cost));
     }
 
-
     //--find the minimum among all the values of the neighbours
-    float minCost=disp_cost[0].second;
-    float disparityValue=disp_cost[0].first;
-    int indexMin=0;
-    for(int i=1;i<disp_cost.size();i++)
+    float minCost = disp_cost[0].second;
+    float disparityValue = disp_cost[0].first;
+    int indexMin = 0;
+    for (int i = 1; i < disp_cost.size(); i++)
     {
-      if(disp_cost[i].second<minCost)
+      if (disp_cost[i].second < minCost)
       {
-        minCost=disp_cost[i].second;
-        disparityValue=disp_cost[i].first;
-        indexMin=i;
+        minCost = disp_cost[i].second;
+        disparityValue = disp_cost[i].first;
+        indexMin = i;
       }
     }
 
     //--Update the value
-    if(indexMin!=0)
+    if (indexMin != 0)
     {
-      disps_[cpv](y, x)=disparityValue;
-      costs_[cpv](y, x)=minCost;
+      disps_[cpv](y, x) = disparityValue;
+      costs_[cpv](y, x) = minCost;
+    }
+  }
+
+  void PatchMatch::view_propagation(int x, int y, int cpv)
+  {
+
+    // INPUT:
+    // x --> x coordinate
+    // y --> y coordinate
+    // cpv --> flag for selecting data related to left or right view
+
+    // CLASS VARIABLE TO USE:
+    // disps_-->disparities, to access use disps_[cpv].at<float>(y, x)
+    // costs_-->costs, to access use disps_[cpv].at<float>(y, x)
+
+    // Given the inputs the function should perturb the disparity at position (x,y) by a factor of delta_z
+    //(i.e. new disparity(x,y) = old disparity(x,y) + delta_z), use max_delta_z and end_dz parameters to cycle between
+    //  different delta_z
+
+    // to compute costs use precomputed_disp_match_cost
+
+    // to check if x and y values are valid use the function:
+    //  bool inside(int x, int y, int lbx, int lby, int ubx, int uby)
+    // lbx=0, lby=0, ubx=cols_, uby=rows_
+
+   
+    // current plane
+    float current_cost = costs_[cpv](y, x);
+    float current_disp=disps_[cpv](y,x);
+    
+    int mx, my = y;
+
+    for(int r=0;r<rows_;++r)
+    {
+      my=r;
+      for (int c = 0; c < cols_; ++c)
+      {
+        mx=c;
+        if(inside(mx, my, 0, 0, cols_, rows_))
+        {
+          float disp_prime=disps_[1-cpv](my, mx);
+          float new_cost=precomputed_disp_match_cost(-disp_prime, x, y, 0);
+          if(new_cost<current_cost)
+          {
+              current_cost=new_cost;
+              current_disp=-disp_prime;
+          }
+        }
+      }
+
     }
 
 
-  }
-
-
-  void PatchMatch::view_propagation(int x, int y, int cpv) {
-
-    //INPUT:
-    //x --> x coordinate
-    //y --> y coordinate
-    //cpv --> flag for selecting data related to left or right view
-
-
-    //CLASS VARIABLE TO USE:
-    //disps_-->disparities, to access use disps_[cpv].at<float>(y, x)
-    //costs_-->costs, to access use disps_[cpv].at<float>(y, x)
-
-    //Given the inputs the function should perturb the disparity at position (x,y) by a factor of delta_z
-    //(i.e. new disparity(x,y) = old disparity(x,y) + delta_z), use max_delta_z and end_dz parameters to cycle between
-    // different delta_z
-
-    //to compute costs use precomputed_disp_match_cost
-
-    //to check if x and y values are valid use the function:
-    // bool inside(int x, int y, int lbx, int lby, int ubx, int uby)
-    //lbx=0, lby=0, ubx=cols_, uby=rows_
-
-
-    
+    disps_[cpv](y,x)=current_disp;
+    costs_[cpv](y,x)=current_cost;
 
   }
 
+  void PatchMatch::disp_perturbation(int x, int y, int cpv, float max_delta_z, float end_dz)
+  {
 
-  void PatchMatch::disp_perturbation(int x, int y, int cpv, float max_delta_z, float end_dz) {
+    // INPUT:
+    // x --> x coordinate
+    // y --> y coordinate
+    // cpv --> flag for selecting data related to left or right view
+    // max_delta_z --> max delta disparity
+    // end_dz --> min delta disparity
 
-    //INPUT:
-    //x --> x coordinate
-    //y --> y coordinate
-    //cpv --> flag for selecting data related to left or right view
-    //max_delta_z --> max delta disparity
-    //end_dz --> min delta disparity
+    // CLASS VARIABLE TO USE:
+    // disps-->disparities, to access use disps_[cpv].at<float>(y, x)
+    // costs-->costs, to access use costs_[cpv].at<float>(y, x)
 
-    //CLASS VARIABLE TO USE:
-    //disps-->disparities, to access use disps_[cpv].at<float>(y, x)
-    //costs-->costs, to access use costs_[cpv].at<float>(y, x)
-
-    //Given the inputs the function should perturb the disparity at position (x,y) by a factor of delta_z
+    // Given the inputs the function should perturb the disparity at position (x,y) by a factor of delta_z
     //(i.e. new disparity(x,y) = old disparity(x,y) + delta_z), use max_delta_z and end_dz parameters to cycle between
-    // different delta_z (free to choose how to do)
+    //  different delta_z (free to choose how to do)
 
-    //to compute costs use precomputed_disp_match_cost
+    // to compute costs use precomputed_disp_match_cost
 
     //--Random delta_z
-    float delta_z=(max_delta_z-end_dz)/2+end_dz; //end_dz + ( rand() % ( max_delta_z - end_dz + 1 ) );
-    disps_[cpv].at<float>(y, x)=disps_[cpv].at<float>(y, x)+delta_z;
-    costs_[cpv].at<float>(y, x)=precomputed_disp_match_cost(disps_[cpv].at<float>(y, x), x, y, 0);
-
-
+    // float delta_z=(max_delta_z-end_dz)/2+end_dz; //end_dz + ( rand() % ( max_delta_z - end_dz + 1 ) );
+    float delta_z = ((float)rand() / (float)max_delta_z) + end_dz;
+    // disps_[cpv].at<float>(y, x)=
+    // costs_[cpv].at<float>(y, x)=precomputed_disp_match_cost(disps_[cpv].at<float>(y, x), x, y, 0);
+    float newDisp = disps_[cpv].at<float>(y, x) + delta_z;
+    
+    float newCost = precomputed_disp_match_cost(disps_[cpv].at<float>(y, x), x, y, 0);
+    if (newCost < costs_[cpv].at<float>(y, x))
+    {
+      disps_[cpv].at<float>(y, x) = newDisp;
+      costs_[cpv].at<float>(y, x) = newCost;
+    }
   }
 
-
-  void PatchMatch::process_pixel(int x, int y, int cpv, int iter) 
+  void PatchMatch::process_pixel(int x, int y, int cpv, int iter)
   {
     // spatial propagation
     spatial_propagation(x, y, cpv, iter);
@@ -336,10 +383,9 @@ namespace pm {
     view_propagation(x, y, cpv);
   }
 
-
-
   void PatchMatch::weighted_median_filter(int cx, int cy, cv::Mat1f &disparity, const cv::Mat &weights,
-                                          const cv::Mat1b &valid, int ws, bool use_invalid) {
+                                          const cv::Mat1b &valid, int ws, bool use_invalid)
+  {
     int half = ws / 2;
     float w_tot = 0;
     float w = 0;
@@ -348,7 +394,8 @@ namespace pm {
 
     for (int x = cx - half; x <= cx + half; ++x)
       for (int y = cy - half; y <= cy + half; ++y)
-        if (inside(x, y, 0, 0, cols_, rows_) && (use_invalid || valid(y, x))) {
+        if (inside(x, y, 0, 0, cols_, rows_) && (use_invalid || valid(y, x)))
+        {
           cv::Vec<int, 4> w_ids({cy, cx, y - cy + half, x - cx + half});
 
           w_tot += weights.at<float>(w_ids);
@@ -359,30 +406,33 @@ namespace pm {
 
     float med_w = w_tot / 2.0f;
 
-    for (auto dw = disps_w.begin(); dw < disps_w.end(); ++dw) {
+    for (auto dw = disps_w.begin(); dw < disps_w.end(); ++dw)
+    {
       w += dw->first;
 
-      if (w >= med_w) {
-        if (dw == disps_w.begin()) {
+      if (w >= med_w)
+      {
+        if (dw == disps_w.begin())
+        {
           disparity(cy, cx) = dw->second;
-        } else {
+        }
+        else
+        {
           disparity(cy, cx) = ((dw - 1)->second + dw->second) / 2.0f;
         }
-        //disparity(cy, cx) = dw->second;
+        // disparity(cy, cx) = dw->second;
       }
     }
   }
 
-
   void PatchMatch::set(const std::string dir)
   {
     // Reading images
-	  cv::Mat3b img1 = cv::imread(dir+"/view0.png", cv::IMREAD_COLOR);
-	  cv::Mat3b img2 = cv::imread(dir+"/view1.png", cv::IMREAD_COLOR);
+    cv::Mat3b img1 = cv::imread(dir + "/view0.png", cv::IMREAD_COLOR);
+    cv::Mat3b img2 = cv::imread(dir + "/view1.png", cv::IMREAD_COLOR);
 
-    cv::Mat1b gt1 = cv::imread(dir+"/GT0.png", cv::IMREAD_GRAYSCALE);
-    cv::Mat1b gt2 = cv::imread(dir+"/GT1.png", cv::IMREAD_GRAYSCALE);
-
+    cv::Mat1b gt1 = cv::imread(dir + "/GT0.png", cv::IMREAD_GRAYSCALE);
+    cv::Mat1b gt2 = cv::imread(dir + "/GT1.png", cv::IMREAD_GRAYSCALE);
 
     std::cerr << "Loading precomputed cost volumes...\n";
     loadPrecomputedCostVolumes(dir);
@@ -390,7 +440,8 @@ namespace pm {
     set(img1, img2, gt1, gt2);
   }
 
-  void PatchMatch::set(const cv::Mat3b &img1, const cv::Mat3b &img2,  const cv::Mat1f &gt1, const cv::Mat1f &gt2) {
+  void PatchMatch::set(const cv::Mat3b &img1, const cv::Mat3b &img2, const cv::Mat1f &gt1, const cv::Mat1f &gt2)
+  {
     views_[0] = img1;
     views_[1] = img2;
 
@@ -430,30 +481,31 @@ namespace pm {
     evaluate_disps_cost(0);
     evaluate_disps_cost(1);
 
-    //std::cerr << "Precompute cost volume left...\n";
-    //precomputeCostVolume(WINDOW_SIZE, 0);
-    //std::cerr << "Precompute cost volume right...\n";
-    //precomputeCostVolume(WINDOW_SIZE, 1);
-
+    // std::cerr << "Precompute cost volume left...\n";
+    // precomputeCostVolume(WINDOW_SIZE, 0);
+    // std::cerr << "Precompute cost volume right...\n";
+    // precomputeCostVolume(WINDOW_SIZE, 1);
   }
 
-
-  void PatchMatch::process(int iterations) 
+  void PatchMatch::process(int iterations)
   {
     std::cerr << "Processing left and right views...\n";
-    for (int iter = 0 ; iter < iterations; ++iter) 
+    for (int iter = 0; iter < iterations; ++iter)
     {
       bool iter_type = (iter % 2 == 0);
       std::cerr << "Iteration " << iter + 1 << "/" << iterations << "\r";
 
       // PROCESS LEFT AND RIGHT VIEW IN SEQUENCE (0=left view, 1=right view)
-      for (int work_view = 0; work_view < 2; ++work_view) 
+      for (int work_view = 0; work_view < 2; ++work_view)
       {
-        if (iter_type) { // FORWARD SCANNING
+        if (iter_type)
+        { // FORWARD SCANNING
           for (int y = 0; y < rows_; ++y)
             for (int x = 0; x < cols_; ++x)
               process_pixel(x, y, work_view, iter);
-        } else { // BACKWARD SCANNING
+        }
+        else
+        { // BACKWARD SCANNING
           for (int y = rows_ - 1; y >= 0; --y)
             for (int x = cols_ - 1; x >= 0; --x)
               process_pixel(x, y, work_view, iter);
@@ -468,40 +520,39 @@ namespace pm {
     int x_lft = x - 1;
     int x_rgt = x + 1;
 
-    while(!validity(y, x_lft) && x_lft >= 0)
+    while (!validity(y, x_lft) && x_lft >= 0)
       --x_lft;
 
-    while(!validity(y, x_rgt) && x_lft < cols_)
+    while (!validity(y, x_rgt) && x_lft < cols_)
       ++x_rgt;
 
     int best_x = x;
 
-    if(x_lft >= 0 && x_rgt < cols_)
+    if (x_lft >= 0 && x_rgt < cols_)
     {
       float disp_l = disps_[cpv].at<float>(y, x_lft);
       float disp_r = disps_[cpv].at<float>(y, x_rgt);
       best_x = (disp_l < disp_r) ? x_lft : x_rgt;
     }
-    else if(x_lft >= 0)
+    else if (x_lft >= 0)
       best_x = x_lft;
-    else if(x_rgt < cols_)
+    else if (x_rgt < cols_)
       best_x = x_rgt;
 
     disps_[cpv].at<float>(y, x) = disps_[cpv].at<float>(y, best_x);
   }
 
-
   void PatchMatch::postProcess()
   {
-    std::cerr<<"Executing post-processing...\n";
+    std::cerr << "Executing post-processing...\n";
 
     // checking pixels disparity validity
     cv::Mat1b lft_validity(rows_, cols_, (unsigned char)false);
     cv::Mat1b rgt_validity(rows_, cols_, (unsigned char)false);
 
-    for(int y=0; y < rows_; ++y)
+    for (int y = 0; y < rows_; ++y)
     {
-      for(int x=0; x < cols_; ++x)
+      for (int x = 0; x < cols_; ++x)
       {
         int x_rgt_match = std::max(0.f, std::min((float)cols_, x - disps_[0](y, x)));
         lft_validity(y, x) = (std::abs(disps_[0](y, x) - disps_[1](y, x_rgt_match)) <= 1);
@@ -511,11 +562,10 @@ namespace pm {
       }
     }
 
-
     // fill-in holes related to invalid pixels
-    for(int y=0; y < rows_; y++)
+    for (int y = 0; y < rows_; y++)
     {
-      for (int x=0; x < cols_; x++)
+      for (int x = 0; x < cols_; x++)
       {
         if (!lft_validity(y, x))
           fill_invalid_pixels(y, x, 0, lft_validity);
@@ -525,11 +575,10 @@ namespace pm {
       }
     }
 
-
     // applying weighted median filter to left and right view respectively
-    for(int x=0; x<cols_; ++x)
+    for (int x = 0; x < cols_; ++x)
     {
-      for(int y=0; y<rows_; ++y)
+      for (int y = 0; y < rows_; ++y)
       {
         weighted_median_filter(x, y, disps_[0], weigs_[0], lft_validity, WINDOW_SIZE, false);
         weighted_median_filter(x, y, disps_[1], weigs_[1], rgt_validity, WINDOW_SIZE, false);
@@ -539,24 +588,24 @@ namespace pm {
 
   float PatchMatch::computeMSE(int cpv)
   {
-    if(gt_[cpv].empty())
+    if (gt_[cpv].empty())
       return -1;
     cv::Mat1f container[2];
     cv::normalize(gt_[cpv], container[0], 0, 63.75, cv::NORM_MINMAX);
     container[1] = disps_[cpv].clone();
-    cv::Mat1f  mask = min(gt_[cpv],1);
+    cv::Mat1f mask = min(gt_[cpv], 1);
     cv::multiply(container[1], mask, container[1], 1);
     float error = 0;
-    for (int y=0; y<rows_; ++y)
+    for (int y = 0; y < rows_; ++y)
     {
-      for (int x=0; x<cols_; ++x)
+      for (int x = 0; x < cols_; ++x)
       {
-        float diff = container[0](y,x) - container[1](y,x);
-        error+=(diff*diff);
+        float diff = container[0](y, x) - container[1](y, x);
+        error += (diff * diff);
       }
     }
-    error = error/(rows_*cols_);
-    //error = cv::quality::QualityMSE::compute(container[0], container[1], cv::noArray())[0];
+    error = error / (rows_ * cols_);
+    // error = cv::quality::QualityMSE::compute(container[0], container[1], cv::noArray())[0];
     return error;
   }
 }
