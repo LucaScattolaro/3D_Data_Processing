@@ -302,30 +302,37 @@ namespace pm
     //  bool inside(int x, int y, int lbx, int lby, int ubx, int uby)
     // lbx=0, lby=0, ubx=cols_, uby=rows_
 
-    // current plane
+
+    //--Initialize coordinates of pixel p' (of the other view)
+    int mx,my=y;
+    
+    //--Current Values for pixel p
     float current_cost = costs_[cpv](y, x);
     float current_disp = disps_[cpv](y, x);
 
-    int mx, my = y;
-
-
+    //--Iterate over different pixels (only x coordiante due to the definition of disparity)
     for (int c = 0; c < cols_; ++c)
     {
       mx = c;
+
+      //--Check if it's inside
       if (inside(mx, my, 0, 0, cols_, rows_))
       {
+        //--Get the disparity of the pixel p'
         float disp_prime = disps_[1 - cpv](my, mx);
-        //float new_cost = precomputed_disp_match_cost(disp_prime, x, y, cpv);
-        float new_cost = disp_match_cost(-disp_prime, x, y, WINDOW_SIZE,cpv);
+
+        //--use the aformentioned disparity for pixel p to compute the cost 
+        float new_cost = precomputed_disp_match_cost(disp_prime, x, y, cpv);
+
+        //--if the cost is better: substitute the disparity value and the cost
         if (new_cost < current_cost)
         {
-          cout << "SONO QUI" << endl;
+          //cout << "SONO QUI" << endl;
           current_cost = new_cost;
-          current_disp = -disp_prime;
+          current_disp = disp_prime;
         }
       }
     }
-
 
     disps_[cpv](y, x) = current_disp;
     costs_[cpv](y, x) = current_cost;
@@ -351,16 +358,15 @@ namespace pm
 
     // to compute costs use precomputed_disp_match_cost
 
-      float delta_z = ((float)rand() / (float)max_delta_z) + end_dz;
+    float delta_z = ((float)rand() / (float)max_delta_z) + end_dz;
 
-      float newDisp = disps_[cpv].at<float>(y, x) + delta_z;
-      float newCost = precomputed_disp_match_cost(newDisp, x, y, cpv);
-      if (newCost < costs_[cpv].at<float>(y, x))
-      {
-        disps_[cpv].at<float>(y, x) = newDisp;
-        costs_[cpv].at<float>(y, x) = newCost;
-      }
-
+    float newDisp = disps_[cpv].at<float>(y, x) + delta_z;
+    float newCost = precomputed_disp_match_cost(newDisp, x, y, cpv);
+    if (newCost < costs_[cpv].at<float>(y, x))
+    {
+      disps_[cpv].at<float>(y, x) = newDisp;
+      costs_[cpv].at<float>(y, x) = newCost;
+    }
   }
 
   void PatchMatch::process_pixel(int x, int y, int cpv, int iter)
