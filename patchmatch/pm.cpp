@@ -9,7 +9,6 @@
 
 using namespace std;
 
-
 namespace pm
 {
 
@@ -249,13 +248,13 @@ namespace pm
     if (inside(nx, y, 0, 0, cols_, rows_))
     {
       float new_disp = disps_[cpv](y, nx);
-      float new_cost = precomputed_disp_match_cost(new_disp, x, y, 0);
+      float new_cost = precomputed_disp_match_cost(new_disp, x, y, cpv);
       disp_cost.push_back(make_pair(new_disp, new_cost));
     }
     if (inside(x, ny, 0, 0, cols_, rows_))
     {
       float new_disp = disps_[cpv](ny, x);
-      float new_cost = precomputed_disp_match_cost(new_disp, x, y, 0);
+      float new_cost = precomputed_disp_match_cost(new_disp, x, y, cpv);
       disp_cost.push_back(make_pair(new_disp, new_cost));
     }
 
@@ -303,37 +302,33 @@ namespace pm
     //  bool inside(int x, int y, int lbx, int lby, int ubx, int uby)
     // lbx=0, lby=0, ubx=cols_, uby=rows_
 
-   
     // current plane
     float current_cost = costs_[cpv](y, x);
-    float current_disp=disps_[cpv](y,x);
-    
+    float current_disp = disps_[cpv](y, x);
+
     int mx, my = y;
 
-    for(int r=0;r<rows_;++r)
+
+    for (int c = 0; c < cols_; ++c)
     {
-      my=r;
-      for (int c = 0; c < cols_; ++c)
+      mx = c;
+      if (inside(mx, my, 0, 0, cols_, rows_))
       {
-        mx=c;
-        if(inside(mx, my, 0, 0, cols_, rows_))
+        float disp_prime = disps_[1 - cpv](my, mx);
+        //float new_cost = precomputed_disp_match_cost(disp_prime, x, y, cpv);
+        float new_cost = disp_match_cost(-disp_prime, x, y, WINDOW_SIZE,cpv);
+        if (new_cost < current_cost)
         {
-          float disp_prime=disps_[1-cpv](my, mx);
-          float new_cost=precomputed_disp_match_cost(-disp_prime, x, y, 0);
-          if(new_cost<current_cost)
-          {
-              current_cost=new_cost;
-              current_disp=-disp_prime;
-          }
+          cout << "SONO QUI" << endl;
+          current_cost = new_cost;
+          current_disp = -disp_prime;
         }
       }
-
     }
 
 
-    disps_[cpv](y,x)=current_disp;
-    costs_[cpv](y,x)=current_cost;
-
+    disps_[cpv](y, x) = current_disp;
+    costs_[cpv](y, x) = current_cost;
   }
 
   void PatchMatch::disp_perturbation(int x, int y, int cpv, float max_delta_z, float end_dz)
@@ -356,19 +351,16 @@ namespace pm
 
     // to compute costs use precomputed_disp_match_cost
 
-    //--Random delta_z
-    // float delta_z=(max_delta_z-end_dz)/2+end_dz; //end_dz + ( rand() % ( max_delta_z - end_dz + 1 ) );
-    float delta_z = ((float)rand() / (float)max_delta_z) + end_dz;
-    // disps_[cpv].at<float>(y, x)=
-    // costs_[cpv].at<float>(y, x)=precomputed_disp_match_cost(disps_[cpv].at<float>(y, x), x, y, 0);
-    float newDisp = disps_[cpv].at<float>(y, x) + delta_z;
-    
-    float newCost = precomputed_disp_match_cost(disps_[cpv].at<float>(y, x), x, y, 0);
-    if (newCost < costs_[cpv].at<float>(y, x))
-    {
-      disps_[cpv].at<float>(y, x) = newDisp;
-      costs_[cpv].at<float>(y, x) = newCost;
-    }
+      float delta_z = ((float)rand() / (float)max_delta_z) + end_dz;
+
+      float newDisp = disps_[cpv].at<float>(y, x) + delta_z;
+      float newCost = precomputed_disp_match_cost(newDisp, x, y, cpv);
+      if (newCost < costs_[cpv].at<float>(y, x))
+      {
+        disps_[cpv].at<float>(y, x) = newDisp;
+        costs_[cpv].at<float>(y, x) = newCost;
+      }
+
   }
 
   void PatchMatch::process_pixel(int x, int y, int cpv, int iter)
