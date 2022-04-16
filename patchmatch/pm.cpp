@@ -302,10 +302,9 @@ namespace pm
     //  bool inside(int x, int y, int lbx, int lby, int ubx, int uby)
     // lbx=0, lby=0, ubx=cols_, uby=rows_
 
-
     //--Initialize coordinates of pixel p' (of the other view)
-    int mx,my=y;
-    
+    int mx, my = y;
+
     //--Current Values for pixel p
     float current_cost = costs_[cpv](y, x);
     float current_disp = disps_[cpv](y, x);
@@ -321,13 +320,13 @@ namespace pm
         //--Get the disparity of the pixel p'
         float disp_prime = disps_[1 - cpv](my, mx);
 
-        //--use the aformentioned disparity for pixel p to compute the cost 
+        //--use the aformentioned disparity for pixel p to compute the cost
         float new_cost = precomputed_disp_match_cost(disp_prime, x, y, cpv);
 
         //--if the cost is better: substitute the disparity value and the cost
         if (new_cost < current_cost)
         {
-          //cout << "SONO QUI" << endl;
+          // cout << "SONO QUI" << endl;
           current_cost = new_cost;
           current_disp = disp_prime;
         }
