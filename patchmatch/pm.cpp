@@ -227,35 +227,39 @@ namespace pm
     // to check if x and y values are valid use the function:
     //  bool inside(int x, int y, int lbx, int lby, int ubx, int uby)
     // lbx=0, lby=0, ubx=cols_, uby=rows_
-    int nx, ny;
-    vector<pair<float, float>> disp_cost;
+    
+    
+    int nx, ny;                               //--new value of coordinates x and y
+    vector<pair<float, float>> disp_cost;     //--vector to contain all the possible choices of disparities and correlate costs 
 
-    //--push in teh vector the current disp and cost values
+    //--push in the vector the current disp and cost values
     disp_cost.push_back(make_pair(disps_[cpv](y, x), costs_[cpv](y, x)));
 
-    //--Check the iteration if is even (to choose the 2 neighbours)
+    //--Check the iteration if is even or odd (to choose the 2 neighbours)
     if (iter % 2 == 0)
     {
-      nx = x - 1;
-      ny = y - 1;
+      nx = x - 1;     //--Left neighbour pixel  (nx,y)
+      ny = y - 1;     //--Upper neighbour pixel (x,ny)
     }
     else
     {
-      nx = x + 1;
-      ny = y + 1;
+      nx = x + 1;     //--Right neighbour pixel (nx,y)
+      ny = y + 1;     //--Lower neighbour pixel (x,ny)
     }
 
+    //--Check if first neighbour is inside
     if (inside(nx, y, 0, 0, cols_, rows_))
     {
-      float new_disp = disps_[cpv](y, nx);
-      float new_cost = precomputed_disp_match_cost(new_disp, x, y, cpv);
-      disp_cost.push_back(make_pair(new_disp, new_cost));
+      float new_disp = disps_[cpv](y, nx);                                  //--Get disparity of neighbour
+      float new_cost = precomputed_disp_match_cost(new_disp, x, y, cpv);    //--Compute the cost with the new disparity
+      disp_cost.push_back(make_pair(new_disp, new_cost));                   //--push the pair inside the vector
     }
+    //--Check if second neighbour is inside
     if (inside(x, ny, 0, 0, cols_, rows_))
     {
-      float new_disp = disps_[cpv](ny, x);
-      float new_cost = precomputed_disp_match_cost(new_disp, x, y, cpv);
-      disp_cost.push_back(make_pair(new_disp, new_cost));
+      float new_disp = disps_[cpv](ny, x);                                  //--Get disparity of neighbour
+      float new_cost = precomputed_disp_match_cost(new_disp, x, y, cpv);    //--Compute the cost with the new disparity
+      disp_cost.push_back(make_pair(new_disp, new_cost));                   //--push the pair inside the vector
     }
 
     //--find the minimum among all the values of the neighbours
@@ -302,6 +306,7 @@ namespace pm
     //  bool inside(int x, int y, int lbx, int lby, int ubx, int uby)
     // lbx=0, lby=0, ubx=cols_, uby=rows_
 
+
     //--Initialize coordinates of pixel p' (of the other view)
     int mx, my = y;
 
@@ -309,7 +314,7 @@ namespace pm
     float current_cost = costs_[cpv](y, x);
     float current_disp = disps_[cpv](y, x);
 
-    //--Iterate over different pixels (only x coordiante due to the definition of disparity)
+    //--Iterate over different pixels (only x coordiante thanks to the definition of disparity)
     for (int c = 0; c < cols_; ++c)
     {
       mx = c;
@@ -320,19 +325,25 @@ namespace pm
         //--Get the disparity of the pixel p'
         float disp_prime = disps_[1 - cpv](my, mx);
 
-        //--use the aformentioned disparity for pixel p to compute the cost
-        float new_cost = precomputed_disp_match_cost(disp_prime, x, y, cpv);
-
-        //--if the cost is better: substitute the disparity value and the cost
-        if (new_cost < current_cost)
+        //--(x,y) matching pixel for (mx,my)
+        if(((cpv==0)&&(mx+(int)disp_prime==x))||((cpv==1)&&(mx-(int)disp_prime==x)))
         {
-          // cout << "SONO QUI" << endl;
-          current_cost = new_cost;
-          current_disp = disp_prime;
+          //--use the aformentioned disparity for pixel p to compute the cost
+          float new_cost = precomputed_disp_match_cost(disp_prime, x, y, cpv);
+
+          //--if the cost is better: substitute the disparity value and the cost
+          if (new_cost < current_cost)
+          {
+            // cout << "SONO QUI" << endl;
+            current_cost = new_cost;
+            current_disp = disp_prime;
+          }
         }
+        
       }
     }
 
+    //--update the disparity and cost values
     disps_[cpv](y, x) = current_disp;
     costs_[cpv](y, x) = current_cost;
   }
@@ -357,15 +368,30 @@ namespace pm
 
     // to compute costs use precomputed_disp_match_cost
 
-    float delta_z = ((float)rand() / (float)max_delta_z) + end_dz;
+    int randomNumIteration=(rand() % (int)(max_delta_z-end_dz)) + 1;
+    //cout<<"randomNumIteration: "<<randomNumIteration<<"   max_delta_z: "<<max_delta_z<<"  end_dz: "<<end_dz<<endl;
 
-    float newDisp = disps_[cpv].at<float>(y, x) + delta_z;
-    float newCost = precomputed_disp_match_cost(newDisp, x, y, cpv);
-    if (newCost < costs_[cpv].at<float>(y, x))
+    for (int i = 0; i < randomNumIteration; i++)
     {
-      disps_[cpv].at<float>(y, x) = newDisp;
-      costs_[cpv].at<float>(y, x) = newCost;
+
+      //--compute delta_z as a random value betwwen end_dz and max_delta_z
+      float delta_z = ((float)rand() / (float)max_delta_z) + end_dz;
+
+      //--compute the new disparity 
+      float newDisp = disps_[cpv].at<float>(y, x) + delta_z;
+
+      //--compute the cost with the new disparity
+      float newCost = precomputed_disp_match_cost(newDisp, x, y, cpv);
+
+      //--if we get a better cost (smaller) update the disparity and the cost values for pixel at position (x,y)
+      if (newCost < costs_[cpv].at<float>(y, x))
+      {
+        disps_[cpv].at<float>(y, x) = newDisp;
+        costs_[cpv].at<float>(y, x) = newCost;
+      }
     }
+    
+    
   }
 
   void PatchMatch::process_pixel(int x, int y, int cpv, int iter)
