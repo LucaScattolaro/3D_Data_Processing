@@ -370,22 +370,28 @@ namespace pm
 
     int randomNumIteration=(rand() % (int)(max_delta_z-end_dz)) + 1;
     //cout<<"randomNumIteration: "<<randomNumIteration<<"   max_delta_z: "<<max_delta_z<<"  end_dz: "<<end_dz<<endl;
+    float currentDisp=disps_[cpv].at<float>(y, x);
+    //cout<<"currentDisp: "<<currentDisp<<endl;
 
     for (int i = 0; i < randomNumIteration; i++)
     {
 
       //--compute delta_z as a random value betwwen end_dz and max_delta_z
-      float delta_z = ((float)rand() / (float)max_delta_z) + end_dz;
+      //float delta_z = ((float)rand() % (float)max_delta_z) + end_dz;
+
+      float delta_z = end_dz + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(max_delta_z-end_dz)));
 
       //--compute the new disparity 
-      float newDisp = disps_[cpv].at<float>(y, x) + delta_z;
-
+      float newDisp = currentDisp + delta_z;
+      //cout<<"   newDisp: "<<currentDisp<<" + "<<delta_z<<" = "<<newDisp<<endl;
       //--compute the cost with the new disparity
       float newCost = precomputed_disp_match_cost(newDisp, x, y, cpv);
 
       //--if we get a better cost (smaller) update the disparity and the cost values for pixel at position (x,y)
       if (newCost < costs_[cpv].at<float>(y, x))
       {
+        cout<<" # BETTER"<<endl;
+        cout<<"   newDisp: "<<currentDisp<<" + "<<delta_z<<" = "<<newDisp<<endl;
         disps_[cpv].at<float>(y, x) = newDisp;
         costs_[cpv].at<float>(y, x) = newCost;
       }
