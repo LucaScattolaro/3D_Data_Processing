@@ -350,7 +350,6 @@ namespace pm
 
   void PatchMatch::disp_perturbation(int x, int y, int cpv, float max_delta_z, float end_dz)
   {
-
     // INPUT:
     // x --> x coordinate
     // y --> y coordinate
@@ -363,39 +362,64 @@ namespace pm
     // costs-->costs, to access use costs_[cpv].at<float>(y, x)
 
     // Given the inputs the function should perturb the disparity at position (x,y) by a factor of delta_z
-    //(i.e. new disparity(x,y) = old disparity(x,y) + delta_z), use max_delta_z and end_dz parameters to cycle between
-    //  different delta_z (free to choose how to do)
+    // (i.e. new disparity(x,y) = old disparity(x,y) + delta_z), use max_delta_z and end_dz parameters to cycle between
+    // different delta_z (free to choose how to do)
 
     // to compute costs use precomputed_disp_match_cost
 
-    int randomNumIteration=(rand() % (int)(max_delta_z-end_dz)) + 1;
-    //cout<<"randomNumIteration: "<<randomNumIteration<<"   max_delta_z: "<<max_delta_z<<"  end_dz: "<<end_dz<<endl;
+    int numIterations=(int)(max_delta_z-end_dz)*3;
     float currentDisp=disps_[cpv].at<float>(y, x);
-    //cout<<"currentDisp: "<<currentDisp<<endl;
 
-    for (int i = 0; i < randomNumIteration; i++)
+
+    for (int i = 0; i < numIterations; i++)
     {
-
       //--compute delta_z as a random value betwwen end_dz and max_delta_z
-      //float delta_z = ((float)rand() % (float)max_delta_z) + end_dz;
-
       float delta_z = end_dz + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(max_delta_z-end_dz)));
 
       //--compute the new disparity 
+
       float newDisp = currentDisp + delta_z;
-      //cout<<"   newDisp: "<<currentDisp<<" + "<<delta_z<<" = "<<newDisp<<endl;
+      
       //--compute the cost with the new disparity
       float newCost = precomputed_disp_match_cost(newDisp, x, y, cpv);
 
       //--if we get a better cost (smaller) update the disparity and the cost values for pixel at position (x,y)
-      if (newCost < costs_[cpv].at<float>(y, x))
+      if((newCost < costs_[cpv].at<float>(y, x)))
       {
-        cout<<" # BETTER"<<endl;
-        cout<<"   newDisp: "<<currentDisp<<" + "<<delta_z<<" = "<<newDisp<<endl;
+        cout<<"    ( "<<x<<" , "<<y<<" )   BETTER newDisp found: "<<currentDisp<<" + "<<delta_z<<" = "<<newDisp<<endl;
         disps_[cpv].at<float>(y, x) = newDisp;
         costs_[cpv].at<float>(y, x) = newCost;
       }
     }
+
+
+
+    // float delta_z = 0.2 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1-0.2)));
+    
+    // float currentDisp=disps_[cpv].at<float>(y, x);
+    // cout<<"( "<<x<<" , "<<y<<" )  currentDisp: "<<currentDisp<<"  delta_z = "<<delta_z<<endl;
+    // float newDisp=currentDisp;
+
+    // do
+    // {
+    //   newDisp = newDisp + delta_z;
+    //   float newCost = precomputed_disp_match_cost(newDisp, x, y, cpv);
+    //   cout<<"   "<<newDisp<<endl;
+    //   //--if we get a better cost (smaller) update the disparity and the cost values for pixel at position (x,y)
+    //   if(newCost < costs_[cpv].at<float>(y, x))
+    //   {
+    //     cout<<"    BETTER newDisp found: "<<newDisp<<endl;
+    //     disps_[cpv].at<float>(y, x) = newDisp;
+    //     costs_[cpv].at<float>(y, x) = newCost;
+    //   }
+    // } while (newDisp <= currentDisp+max_delta_z);
+    
+
+    
+
+
+
+
     
     
   }
