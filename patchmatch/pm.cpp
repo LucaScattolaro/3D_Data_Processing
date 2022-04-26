@@ -392,35 +392,6 @@ namespace pm
       }
     }
 
-
-
-    // float delta_z = 0.2 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(1-0.2)));
-    
-    // float currentDisp=disps_[cpv].at<float>(y, x);
-    // cout<<"( "<<x<<" , "<<y<<" )  currentDisp: "<<currentDisp<<"  delta_z = "<<delta_z<<endl;
-    // float newDisp=currentDisp;
-
-    // do
-    // {
-    //   newDisp = newDisp + delta_z;
-    //   float newCost = precomputed_disp_match_cost(newDisp, x, y, cpv);
-    //   cout<<"   "<<newDisp<<endl;
-    //   //--if we get a better cost (smaller) update the disparity and the cost values for pixel at position (x,y)
-    //   if(newCost < costs_[cpv].at<float>(y, x))
-    //   {
-    //     cout<<"    BETTER newDisp found: "<<newDisp<<endl;
-    //     disps_[cpv].at<float>(y, x) = newDisp;
-    //     costs_[cpv].at<float>(y, x) = newCost;
-    //   }
-    // } while (newDisp <= currentDisp+max_delta_z);
-    
-
-    
-
-
-
-
-    
     
   }
 
