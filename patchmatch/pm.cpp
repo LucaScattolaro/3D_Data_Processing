@@ -367,9 +367,9 @@ namespace pm
 
     // to compute costs use precomputed_disp_match_cost
 
-    int numIterations=(int)(max_delta_z-end_dz)*3;
+    int numIterations=(int)(max_delta_z-end_dz)*10;//*5;
     float currentDisp=disps_[cpv].at<float>(y, x);
-
+    int sign=2*cpv-1;
 
     for (int i = 0; i < numIterations; i++)
     {
@@ -380,15 +380,18 @@ namespace pm
 
       float newDisp = currentDisp + delta_z;
       
-      //--compute the cost with the new disparity
-      float newCost = precomputed_disp_match_cost(newDisp, x, y, cpv);
-
-      //--if we get a better cost (smaller) update the disparity and the cost values for pixel at position (x,y)
-      if((newCost < costs_[cpv].at<float>(y, x)))
+      if(inside(x+sign*newDisp, y, 0, 0, cols_, rows_))
       {
-        cout<<"    ( "<<x<<" , "<<y<<" )   BETTER newDisp found: "<<currentDisp<<" + "<<delta_z<<" = "<<newDisp<<endl;
-        disps_[cpv].at<float>(y, x) = newDisp;
-        costs_[cpv].at<float>(y, x) = newCost;
+        //--compute the cost with the new disparity
+        float newCost = precomputed_disp_match_cost(newDisp, x, y, cpv);
+
+        //--if we get a better cost (smaller) update the disparity and the cost values for pixel at position (x,y)
+        if((newCost < costs_[cpv].at<float>(y, x)))
+        {
+          //cout<<"    ( "<<x<<" , "<<y<<" )   BETTER newDisp found: "<<currentDisp<<" + "<<delta_z<<" = "<<newDisp<<endl;
+          disps_[cpv].at<float>(y, x) = newDisp;
+          costs_[cpv].at<float>(y, x) = newCost;
+        }
       }
     }
 
