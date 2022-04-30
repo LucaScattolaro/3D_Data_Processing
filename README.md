@@ -1,1 +1,1 @@
-# 3D_Data_Processing
+# 3DP Lab2 Structure from Motion
