@@ -36,42 +36,46 @@ cv::Mat FeatureMatcher::readUndistortedImage(const std::string& filename )
 
 void FeatureMatcher::extractFeatures()
 {
-  features_.resize(imagesnames.size());
-  descriptors_.resize(imagesnames.size());
-  featscolors.resize(imagesnames.size());
+  features_.resize(images_names_.size());
+  descriptors_.resize(images_names_.size());
+  feats_colors_.resize(images_names_.size());
 
-  cv::Ptr<cv::xfeatures2D::SIFT> siftPtr = cv::xfeatures2d::SIFT::create();
  
-  for( int i = 0; i < imagesnames.size(); i++  )
+
+  cv::Ptr<cv::xfeatures2d::SIFT> siftPtr = cv::xfeatures2d::SIFT::create();
+ 
+  for( int i = 0; i < images_names_.size(); i++  )
   {
     std::cout<<"Computing descriptors for image "<<i<<std::endl;
-    cv::Mat img = readUndistortedImage(imagesnames[i]);
+    cv::Mat img = readUndistortedImage(images_names_[i]);
 
-    //////////////////////////// Code to be completed (1/5) /////////////////////////////////
-    // Extract salient points + descriptors from i-th image, and store them into
-    // features[i] and descriptors[i] vector, respectively
-    // Extract also the color (i.e., the cv::Vec3b information) of each feature, and store
-    // it into featscolors[i] vector
-    /////////////////////////////////////////////////////////////////////////////////////////
+    // //////////////////////////// Code to be completed (1/5) /////////////////////////////////
+    // // Extract salient points + descriptors from i-th image, and store them into
+    // // features[i] and descriptors[i] vector, respectively
+    // // Extract also the color (i.e., the cv::Vec3b information) of each feature, and store
+    // // it into featscolors[i] vector
+    // /////////////////////////////////////////////////////////////////////////////////////////
 
     std::vector<cv::KeyPoint> features;
     cv::Mat descriptors;
     std::vector<cv::Vec3b> feats_colors;
 
     siftPtr->detect(img, features);
-    siftPtr->compute(img, features, descriptors)
+    siftPtr->compute(img, features, descriptors);
 
     for (auto keypoint : features) 
-      feats_colors.pushback(image.at<Vec3b>(Point(keypoint.x, keypoint.y)))
+      feats_colors.push_back(img.at<cv::Vec3b>(cv::Point(keypoint.pt.x, keypoint.pt.y)));
 
-    features.pushback(features);
-    descriptors.push_back(descriptors);
-    featscolors.push_back(feats_colors);
+    features_.push_back(features);
+    descriptors_.push_back(descriptors);
+    feats_colors_.push_back(feats_colors);
   }
 }
 
 void FeatureMatcher::exhaustiveMatching()
 {
+
+  //Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
   for( int i = 0; i < images_names_.size() - 1; i++ )
   {
     for( int j = i + 1; j < images_names_.size(); j++ )
@@ -89,6 +93,23 @@ void FeatureMatcher::exhaustiveMatching()
       // Do not set matches between two images if the amount of inliers matches
       // (i.e., geomatrically verified matches) is small (say <= 10 matches)
       /////////////////////////////////////////////////////////////////////////////////////////
+
+      //--Match descriptors: Since is a floating-point descriptor NORM_L2 is used
+      // std::vector< std::vector<DMatch> > knn_matches;
+      // matcher->knnMatch( descriptors_[i], descriptors_[j], knn_matches, 2 );
+
+
+      // //--Filter matches using the Lowe's ratio test
+      // const float ratio_thresh = 0.75f;
+      // std::vector<DMatch> good_matches;
+      // for (size_t i = 0; i < knn_matches.size(); i++)
+      // {
+      //     if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
+      //     {
+      //         good_matches.push_back(knn_matches[i][0]);
+      //     }
+      // }
+
 
       setMatches( i, j, inlier_matches);
     }

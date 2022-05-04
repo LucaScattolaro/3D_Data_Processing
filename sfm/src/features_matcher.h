@@ -1,8 +1,13 @@
 #pragma once
-
+#define OPENCV_TRAITS_ENABLE_DEPRECATED
 #include <string>
 #include <vector>
 #include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/xfeatures2d.hpp>
+
+
 
 class FeatureMatcher
 {
