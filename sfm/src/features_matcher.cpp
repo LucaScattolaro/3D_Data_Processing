@@ -36,22 +36,37 @@ cv::Mat FeatureMatcher::readUndistortedImage(const std::string& filename )
 
 void FeatureMatcher::extractFeatures()
 {
-  features_.resize(images_names_.size());
-  descriptors_.resize(images_names_.size());
-  feats_colors_.resize(images_names_.size());
+  features_.resize(imagesnames.size());
+  descriptors_.resize(imagesnames.size());
+  featscolors.resize(imagesnames.size());
 
-
-  for( int i = 0; i < images_names_.size(); i++  )
+  cv::Ptr<cv::xfeatures2D::SIFT> siftPtr = cv::xfeatures2d::SIFT::create();
+ 
+  for( int i = 0; i < imagesnames.size(); i++  )
   {
     std::cout<<"Computing descriptors for image "<<i<<std::endl;
-    cv::Mat img = readUndistortedImage(images_names_[i]);
+    cv::Mat img = readUndistortedImage(imagesnames[i]);
 
-    //////////////////////////// Code to be completed (1/1) /////////////////////////////////
+    //////////////////////////// Code to be completed (1/5) /////////////////////////////////
     // Extract salient points + descriptors from i-th image, and store them into
-    // features_[i] and descriptors_[i] vector, respectively
+    // features[i] and descriptors[i] vector, respectively
     // Extract also the color (i.e., the cv::Vec3b information) of each feature, and store
-    // it into feats_colors_[i] vector
+    // it into featscolors[i] vector
     /////////////////////////////////////////////////////////////////////////////////////////
+
+    std::vector<cv::KeyPoint> features;
+    cv::Mat descriptors;
+    std::vector<cv::Vec3b> feats_colors;
+
+    siftPtr->detect(img, features);
+    siftPtr->compute(img, features, descriptors)
+
+    for (auto keypoint : features) 
+      feats_colors.pushback(image.at<Vec3b>(Point(keypoint.x, keypoint.y)))
+
+    features.pushback(features);
+    descriptors.push_back(descriptors);
+    featscolors.push_back(feats_colors);
   }
 }
 
