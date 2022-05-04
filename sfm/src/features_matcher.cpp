@@ -76,7 +76,8 @@ void FeatureMatcher::extractFeatures()
 void FeatureMatcher::exhaustiveMatching()
 {
 
-  Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
+
+  Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);    //--Luca 04/05/2022
   for (int i = 0; i < images_names_.size() - 1; i++)
   {
     for (int j = i + 1; j < images_names_.size(); j++)
