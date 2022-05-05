@@ -133,6 +133,10 @@ void FeatureMatcher::exhaustiveMatching()
       //-- Essential matrix E
       Mat E = findEssentialMat(imageI_keyPoints, imageJ_keyPoints, new_intrinsics_matrix_, RANSAC, 0.999, 1.0, mask_E);
 
+
+
+      
+
 #pragma endregion
 
       setMatches(i, j, inlier_matches);
