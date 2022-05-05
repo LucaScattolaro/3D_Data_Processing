@@ -124,7 +124,7 @@ void FeatureMatcher::exhaustiveMatching()
       Mat mask_H, mask_F, mask_E;
 
       //-- Homography matrix H
-      Mat H = findHomography(imageI_keyPoints, imageJ_keyPoints, RANSAC, mask_H);
+      Mat H = findHomography(imageI_keyPoints, imageJ_keyPoints, cv::RANSAC, 3,mask_H);
 
       //-- Fundamental matrix F
       Mat F = findFundamentalMat(imageI_keyPoints, imageJ_keyPoints, FM_RANSAC, 3, 0.99, mask_F);
