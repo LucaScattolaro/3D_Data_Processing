@@ -100,7 +100,6 @@ void FeatureMatcher::exhaustiveMatching()
       //--Match descriptors: Since is a floating-point descriptor NORM_L2 is used
       vector<vector<DMatch>> knn_matches;
       matcher->knnMatch(descriptors_[i], descriptors_[j], knn_matches, 2);
-      cout<<"Vareo LA"<<endl;
 
 
       //-- Filter matches using the Lowe's ratio test
@@ -114,19 +113,19 @@ void FeatureMatcher::exhaustiveMatching()
         }
       }
 
-      cout<<"QUAAAAAAAAAAAAA"<<endl;
+
       //-- Localize the object
       std::vector<Point2f> imageI_keyPoints;
       std::vector<Point2f> imageJ_keyPoints;
 
-      cout<<"good_matches.size(): "<<good_matches.size()<<endl;
+    
       for (int l = 0; l < good_matches.size()-1; l++)
       {
-        cout<<"ITERATION "<<l<<endl;
-        cout<<"   good_matches["<<l<<"].queryIdx: "<<good_matches[l].queryIdx<<endl;
-        cout<<"   good_matches["<<l<<"].trainIdx: "<<good_matches[l].trainIdx<<endl;
-        cout<<"   features_["<<l<<"]"<<features_[i].size()<<endl;
-        cout<<"   features_["<<l<<"]"<<features_[j].size()<<endl;
+        // cout<<"   ITERATION "<<l<<endl;
+        // cout<<"     good_matches["<<l<<"].queryIdx: "<<good_matches[l].queryIdx<<endl;
+        // cout<<"     good_matches["<<l<<"].trainIdx: "<<good_matches[l].trainIdx<<endl;
+        // cout<<"     features_["<<l<<"]"<<features_[i].size()<<endl;
+        // cout<<"     features_["<<l<<"]"<<features_[j].size()<<endl;
         //-- Get the keypoints from the good matches
         imageI_keyPoints.push_back(features_[i][good_matches[l].queryIdx].pt);
         imageJ_keyPoints.push_back(features_[j][good_matches[l].trainIdx].pt);
@@ -148,28 +147,28 @@ void FeatureMatcher::exhaustiveMatching()
 
       
       //--Find Inliers for matrix H
-      cout<< "Inliers Matches for matrix H : ("<<mask_H.rows<<mask_H.cols<<" )"<< endl;
+      //cout<< "Inliers Matches for matrix H : ("<<mask_H.rows<<" , "<<mask_H.cols<<" )"<< endl;
       vector<int> indexes_inlierMatches_H;
       for (int k = 0; k < mask_H.rows; k++)
       {
           // Select only the inliers (mask entry set to 1)
           if ((int)mask_H.at<uchar>(k, 0) == 1)
           {
-              std::cout << k << ", ";
+              //std::cout << k << ", ";
               indexes_inlierMatches_H.push_back(k);
           }
       }
       std::cout << std::endl;
 
       //--Find Inliers for matrix F
-      cout<< "Inliers Matches for matrix F : ("<<mask_F.rows<<mask_F.cols<<" )"<< endl;
+      //cout<< "Inliers Matches for matrix F : ("<<mask_F.rows<<" , "<<mask_F.cols<<" )"<< endl;
       vector<int> indexes_inlierMatches_F;
       for (int k = 0; k < mask_H.rows; k++)
       {
           // Select only the inliers (mask entry set to 1)
           if ((int)mask_F.at<uchar>(k, 0) == 1)
           {
-              std::cout << k << ", ";
+              //std::cout << k << ", ";
               indexes_inlierMatches_F.push_back(k);
           }
       }
@@ -177,14 +176,14 @@ void FeatureMatcher::exhaustiveMatching()
 
 
       //--Find Inliers for matrix E
-      cout<< "Inliers Matches for matrix E : ("<<mask_E.rows<<mask_E.cols<<" )"<< endl;
+      //cout<< "Inliers Matches for matrix E : ("<<mask_E.rows<<" , "<<mask_E.cols<<" )"<< endl;
       vector<int> indexes_inlierMatches_E;
       for (int k = 0; k < mask_H.rows; k++)
       {
           // Select only the inliers (mask entry set to 1)
           if ((int)mask_E.at<uchar>(k, 0) == 1)
           {
-              std::cout << k << ", ";
+              //std::cout << k << ", ";
               indexes_inlierMatches_E.push_back(k);
           }
       }
@@ -192,14 +191,14 @@ void FeatureMatcher::exhaustiveMatching()
       
 
       //-- Find the number of inliers matches for each Model
-      cout<< "NUMBER INLIERS MATCHES :"<< endl;
+      cout<< "  NUMBER INLIERS MATCHES :"<< endl;
       int num_inMatch_H=indexes_inlierMatches_H.size();
       int num_inMatch_F=indexes_inlierMatches_F.size();
       int num_inMatch_E=indexes_inlierMatches_E.size();
 
-      cout<< "  indexes_inlierMatches_H: "<<num_inMatch_H<< endl;
-      cout<< "  indexes_inlierMatches_F: "<<num_inMatch_F<< endl;
-      cout<< "  indexes_inlierMatches_E: "<<num_inMatch_E<< endl;
+      cout<< "    indexes_inlierMatches_H: "<<num_inMatch_H<< endl;
+      cout<< "    indexes_inlierMatches_F: "<<num_inMatch_F<< endl;
+      cout<< "    indexes_inlierMatches_E: "<<num_inMatch_E<< endl;
 
       
       //-- Find the best Model
@@ -217,13 +216,12 @@ void FeatureMatcher::exhaustiveMatching()
         finalIndexes_Inliers=indexes_inlierMatches_E;
       }
 
-
-
       //-- Create Inlier Matches
-      for (int i = 0; i < finalIndexes_Inliers.size(); i++)
-      {
-        inlier_matches.push_back(good_matches[finalIndexes_Inliers[i]]);
-      }
+      if(finalIndexes_Inliers.size()>10)
+        for (int i = 0; i < finalIndexes_Inliers.size(); i++)
+        {
+          inlier_matches.push_back(good_matches[finalIndexes_Inliers[i]]);
+        }
       
 
 
