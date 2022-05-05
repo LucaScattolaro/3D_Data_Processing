@@ -160,6 +160,8 @@ void FeatureMatcher::exhaustiveMatching()
       }
       std::cout << std::endl;
 
+
+//################### USE ONLY ONE FOR
       //--Find Inliers for matrix F
       //cout<< "Inliers Matches for matrix F : ("<<mask_F.rows<<" , "<<mask_F.cols<<" )"<< endl;
       vector<int> indexes_inlierMatches_F;
