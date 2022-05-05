@@ -43,13 +43,13 @@ void FeatureMatcher::extractFeatures()
   descriptors_.resize(images_names_.size());
   feats_colors_.resize(images_names_.size());
 
-  cv::Ptr<cv::xfeatures2d::SIFT> siftPtr = cv::xfeatures2d::SIFT::create();
+  Ptr<xfeatures2d::SIFT> siftPtr = xfeatures2d::SIFT::create();
   //cv::Ptr<cv::SIFT> siftPtr = cv::SIFT::create();
 
   for (int i = 0; i < images_names_.size(); i++)
   {
-    std::cout << "Computing descriptors for image " << i << std::endl;
-    cv::Mat img = readUndistortedImage(images_names_[i]);
+    cout << "Computing descriptors for image " << i << endl;
+    Mat img = readUndistortedImage(images_names_[i]);
 
     //////////////////////////// Code to be completed (1/5) /////////////////////////////////
     // Extract salient points + descriptors from i-th image, and store them into
@@ -58,9 +58,9 @@ void FeatureMatcher::extractFeatures()
     // it into featscolors[i] vector
     /////////////////////////////////////////////////////////////////////////////////////////
 
-    std::vector<cv::KeyPoint> features;
-    cv::Mat descriptors;
-    std::vector<cv::Vec3b> feats_colors;
+    vector<KeyPoint> features;
+    Mat descriptors;
+    vector<Vec3b> feats_colors;
 
     siftPtr->detect(img, features);
     siftPtr->compute(img, features, descriptors);
@@ -68,9 +68,9 @@ void FeatureMatcher::extractFeatures()
     for (auto keypoint : features)
       feats_colors.push_back(img.at<cv::Vec3b>(cv::Point(keypoint.pt.x, keypoint.pt.y)));
 
-    features_.push_back(features);
-    descriptors_.push_back(descriptors);
-    feats_colors_.push_back(feats_colors);
+    features_[i]=features;
+    descriptors_[i]=descriptors;
+    feats_colors_[i]=feats_colors;
   }
 }
 
@@ -82,8 +82,8 @@ void FeatureMatcher::exhaustiveMatching()
   {
     for (int j = i + 1; j < images_names_.size(); j++)
     {
-      std::cout << "Matching image " << i << " with image " << j << std::endl;
-      std::vector<cv::DMatch> matches, inlier_matches;
+      cout << "Matching image " << i << " with image " << j << std::endl;
+      vector<cv::DMatch> matches, inlier_matches;
 
       //////////////////////////// Code to be completed (2/5) /////////////////////////////////
       // Match descriptors between image i and image j, and perform geometric validation,
@@ -100,32 +100,44 @@ void FeatureMatcher::exhaustiveMatching()
       //--Match descriptors: Since is a floating-point descriptor NORM_L2 is used
       vector<vector<DMatch>> knn_matches;
       matcher->knnMatch(descriptors_[i], descriptors_[j], knn_matches, 2);
+      cout<<"Vareo LA"<<endl;
+
 
       //-- Filter matches using the Lowe's ratio test
-      const float ratio_thresh = 0.75f;
+      const float ratio_thresh = 1; //s0.75f;
       vector<DMatch> good_matches;
-      for (size_t i = 0; i < knn_matches.size(); i++)
+      for (int k = 0; k < knn_matches.size(); k++)
       {
-        if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
+        if (knn_matches[k][0].distance < ratio_thresh * knn_matches[k][1].distance)
         {
-          good_matches.push_back(knn_matches[i][0]);
+          good_matches.push_back(knn_matches[k][0]);
         }
       }
 
+      cout<<"QUAAAAAAAAAAAAA"<<endl;
       //-- Localize the object
       std::vector<Point2f> imageI_keyPoints;
       std::vector<Point2f> imageJ_keyPoints;
-      for (size_t i = 0; i < good_matches.size(); i++)
+
+      cout<<"good_matches.size(): "<<good_matches.size()<<endl;
+      for (int l = 0; l < good_matches.size()-1; l++)
       {
+        cout<<"ITERATION "<<l<<endl;
+        cout<<"   good_matches["<<l<<"].queryIdx: "<<good_matches[l].queryIdx<<endl;
+        cout<<"   good_matches["<<l<<"].trainIdx: "<<good_matches[l].trainIdx<<endl;
+        cout<<"   features_["<<l<<"]"<<features_[i].size()<<endl;
+        cout<<"   features_["<<l<<"]"<<features_[j].size()<<endl;
         //-- Get the keypoints from the good matches
-        imageI_keyPoints.push_back(features_[i][good_matches[i].queryIdx].pt);
-        imageJ_keyPoints.push_back(features_[j][good_matches[i].trainIdx].pt);
+        imageI_keyPoints.push_back(features_[i][good_matches[l].queryIdx].pt);
+        imageJ_keyPoints.push_back(features_[j][good_matches[l].trainIdx].pt);
       }
 
       Mat mask_H, mask_F, mask_E;
+     
+
 
       //-- Homography matrix H
-      Mat H = findHomography(imageI_keyPoints, imageJ_keyPoints, cv::RANSAC, 3,mask_H);
+      Mat H = findHomography(imageI_keyPoints, imageJ_keyPoints, RANSAC, 3,mask_H);
 
       //-- Fundamental matrix F
       Mat F = findFundamentalMat(imageI_keyPoints, imageJ_keyPoints, FM_RANSAC, 3, 0.99, mask_F);
@@ -134,8 +146,86 @@ void FeatureMatcher::exhaustiveMatching()
       Mat E = findEssentialMat(imageI_keyPoints, imageJ_keyPoints, new_intrinsics_matrix_, RANSAC, 0.999, 1.0, mask_E);
 
 
+      
+      //--Find Inliers for matrix H
+      cout<< "Inliers Matches for matrix H : ("<<mask_H.rows<<mask_H.cols<<" )"<< endl;
+      vector<int> indexes_inlierMatches_H;
+      for (int k = 0; k < mask_H.rows; k++)
+      {
+          // Select only the inliers (mask entry set to 1)
+          if ((int)mask_H.at<uchar>(k, 0) == 1)
+          {
+              std::cout << k << ", ";
+              indexes_inlierMatches_H.push_back(k);
+          }
+      }
+      std::cout << std::endl;
+
+      //--Find Inliers for matrix F
+      cout<< "Inliers Matches for matrix F : ("<<mask_F.rows<<mask_F.cols<<" )"<< endl;
+      vector<int> indexes_inlierMatches_F;
+      for (int k = 0; k < mask_H.rows; k++)
+      {
+          // Select only the inliers (mask entry set to 1)
+          if ((int)mask_F.at<uchar>(k, 0) == 1)
+          {
+              std::cout << k << ", ";
+              indexes_inlierMatches_F.push_back(k);
+          }
+      }
+      std::cout << std::endl;
+
+
+      //--Find Inliers for matrix E
+      cout<< "Inliers Matches for matrix E : ("<<mask_E.rows<<mask_E.cols<<" )"<< endl;
+      vector<int> indexes_inlierMatches_E;
+      for (int k = 0; k < mask_H.rows; k++)
+      {
+          // Select only the inliers (mask entry set to 1)
+          if ((int)mask_E.at<uchar>(k, 0) == 1)
+          {
+              std::cout << k << ", ";
+              indexes_inlierMatches_E.push_back(k);
+          }
+      }
+      std::cout << std::endl;
+      
+
+      //-- Find the number of inliers matches for each Model
+      cout<< "NUMBER INLIERS MATCHES :"<< endl;
+      int num_inMatch_H=indexes_inlierMatches_H.size();
+      int num_inMatch_F=indexes_inlierMatches_F.size();
+      int num_inMatch_E=indexes_inlierMatches_E.size();
+
+      cout<< "  indexes_inlierMatches_H: "<<num_inMatch_H<< endl;
+      cout<< "  indexes_inlierMatches_F: "<<num_inMatch_F<< endl;
+      cout<< "  indexes_inlierMatches_E: "<<num_inMatch_E<< endl;
 
       
+      //-- Find the best Model
+      vector<int> finalIndexes_Inliers;
+      if((num_inMatch_H>=num_inMatch_F)&&(num_inMatch_H>=num_inMatch_E))
+      {
+          finalIndexes_Inliers=indexes_inlierMatches_H;
+      }
+      else if((num_inMatch_F>=num_inMatch_H)&&(num_inMatch_F>=num_inMatch_E))
+      {
+        finalIndexes_Inliers=indexes_inlierMatches_F;
+      }
+      else 
+      {
+        finalIndexes_Inliers=indexes_inlierMatches_E;
+      }
+
+
+
+      //-- Create Inlier Matches
+      for (int i = 0; i < finalIndexes_Inliers.size(); i++)
+      {
+        inlier_matches.push_back(good_matches[finalIndexes_Inliers[i]]);
+      }
+      
+
 
 #pragma endregion
 
