@@ -44,6 +44,7 @@ void FeatureMatcher::extractFeatures()
   feats_colors_.resize(images_names_.size());
 
   cv::Ptr<cv::xfeatures2d::SIFT> siftPtr = cv::xfeatures2d::SIFT::create();
+  //cv::Ptr<cv::SIFT> siftPtr = cv::SIFT::create();
 
   for (int i = 0; i < images_names_.size(); i++)
   {
