@@ -50,12 +50,12 @@ void FeatureMatcher::extractFeatures()
     std::cout << "Computing descriptors for image " << i << std::endl;
     cv::Mat img = readUndistortedImage(images_names_[i]);
 
-    // //////////////////////////// Code to be completed (1/5) /////////////////////////////////
-    // // Extract salient points + descriptors from i-th image, and store them into
-    // // features[i] and descriptors[i] vector, respectively
-    // // Extract also the color (i.e., the cv::Vec3b information) of each feature, and store
-    // // it into featscolors[i] vector
-    // /////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////// Code to be completed (1/5) /////////////////////////////////
+    // Extract salient points + descriptors from i-th image, and store them into
+    // features[i] and descriptors[i] vector, respectively
+    // Extract also the color (i.e., the cv::Vec3b information) of each feature, and store
+    // it into featscolors[i] vector
+    /////////////////////////////////////////////////////////////////////////////////////////
 
     std::vector<cv::KeyPoint> features;
     cv::Mat descriptors;
@@ -76,8 +76,7 @@ void FeatureMatcher::extractFeatures()
 void FeatureMatcher::exhaustiveMatching()
 {
 
-
-  Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);    //--Luca 04/05/2022
+  Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED); //--Luca 04/05/2022
   for (int i = 0; i < images_names_.size() - 1; i++)
   {
     for (int j = i + 1; j < images_names_.size(); j++)
@@ -122,8 +121,16 @@ void FeatureMatcher::exhaustiveMatching()
         imageJ_keyPoints.push_back(features_[j][good_matches[i].trainIdx].pt);
       }
 
-      //-- Homograph matrix
-      Mat H = findHomography(imageI_keyPoints, imageJ_keyPoints, RANSAC);
+      Mat mask_H, mask_F, mask_E;
+
+      //-- Homography matrix H
+      Mat H = findHomography(imageI_keyPoints, imageJ_keyPoints, RANSAC, mask_H);
+
+      //-- Fundamental matrix F
+      Mat F = findFundamentalMat(imageI_keyPoints, imageJ_keyPoints, FM_RANSAC, 3, 0.99, mask_F);
+
+      //-- Essential matrix E
+      Mat E = findEssentialMat(imageI_keyPoints, imageJ_keyPoints, new_intrinsics_matrix_, RANSAC, 0.999, 1.0, mask_E);
 
 #pragma endregion
 
