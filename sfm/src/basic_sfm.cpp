@@ -10,6 +10,7 @@
 #include <ceres/rotation.h>
 
 using namespace std;
+using namespace cv;
 
 struct ReprojectionError
 {
@@ -554,7 +555,7 @@ void BasicSfM::solve()
     Mat H = findHomography(points0, points1, RANSAC, 3, inlier_mask_H);
 
     //-- Essential matrix E
-    Mat E = findEssentialMat(points0, points1, new_intrinsics_matrix_, RANSAC, 0.999, 1.0, inlier_mask_E);
+    Mat E = findEssentialMat(points0, points1, intrinsics_matrix, RANSAC, 0.999, 1.0, inlier_mask_E);
 
     //--Inliers for model E
     int num_inlier_H = 0, num_inlier_E = 0;
@@ -562,26 +563,17 @@ void BasicSfM::solve()
     {
       // Select only the inliers (mask entry set to 1)
       if ((int)inlier_mask_H.at<uchar>(k, 0) == 1)
-      {
         num_inlier_H++;
-        // indexes_inlierMatches_F.push_back(k);
-      }
       if ((int)inlier_mask_E.at<uchar>(k, 0) == 1)
-      {
         num_inlier_E++;
-        // indexes_inlierMatches_F.push_back(k);
-      }
     }
 
     if (num_inlier_E > num_inlier_H)
     {
       // recover from E the initial rigid body transformation between ref_pose_idx
       // and new_pose_idx ( -> store it into init_r_mat and  init_t; defined above <-)
+      recoverPose(E, points0, points1, intrinsics_matrix, init_r_mat, init_t);
       seed_found = true;
-    }
-    else
-    {
-      // test a different [ref_pose_idx, new_pose_idx] pair (while( !seed_found ) loop)
     }
 
 #pragma endregion
