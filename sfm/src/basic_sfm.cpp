@@ -55,7 +55,7 @@ struct ReprojectionError
 
   static ceres::CostFunction* Create(const double observed_x,
                                      const double observed_y) {
-    return (new ceres::AutoDiffCostFunction<ReprojectionError, 2, 9, 3>(
+    return (new ceres::AutoDiffCostFunction<ReprojectionError, 2, 6, 3>(
                 new ReprojectionError(observed_x, observed_y)));
   }
 
@@ -834,7 +834,6 @@ void BasicSfM::bundleAdjustmentIter(int new_cam_idx)
       //.. check if this observation has bem already registered (bot checking camera pose and point pose)
       if (pose_optim_iter_[pose_index_[i_obs]] > 0 && pts_optim_iter_[point_index_[i_obs]] > 0)
       {
-
         //////////////////////////// Code to be completed (4/5) /////////////////////////////////
         //.. in case, add a residual block inside the Ceres solver problem.
         // You should define a suitable functor (i.e., see the ReprojectionError struct at the
@@ -845,6 +844,10 @@ void BasicSfM::bundleAdjustmentIter(int new_cam_idx)
         // The camera position blocks have size (camera_block_size_) of 6 elements,
         // while the point position blocks have size (point_block_size_) of 3 elements.
         //////////////////////////////////////////////////////////////////////////////////
+        ceres::CostFunction* cost_function = ReprojectionError::Create(
+                                              observations_[2 * i_obs], 
+                                              observations_[2 * i_obs + 1]);
+        problem.AddResidualBlock(cost_function, new ceres::CauchyLoss(2 * max_reproj_err_), &x);
       }
     }
 
