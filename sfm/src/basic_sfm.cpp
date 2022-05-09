@@ -26,12 +26,14 @@ struct ReprojectionError
 #pragma region Alberto 06 / 05 / 2022
 
   ReprojectionError(double observed_x, double observed_y)
-      : observed_x(observed_x), observed_y(observed_y) {}
+      : observed_x(observed_x), observed_y(observed_y)
+  {
+  }
 
   template <typename T>
-  bool operator()(const T* const camera,
-                  const T* const point,
-                  T* residuals) const 
+  bool operator()(const T *const camera,
+                  const T *const point,
+                  T *residuals) const
   {
     // camera[0,1,2] are the angle-axis rotation.
     T p[3];
@@ -41,7 +43,7 @@ struct ReprojectionError
     p[0] += camera[3];
     p[1] += camera[4];
     p[2] += camera[5];
-    
+
     // Compute projected point position.
     const T predicted_x = p[0] / p[2];
     const T predicted_y = p[1] / p[2];
@@ -53,10 +55,11 @@ struct ReprojectionError
     return true;
   }
 
-  static ceres::CostFunction* Create(const double observed_x,
-                                     const double observed_y) {
+  static ceres::CostFunction *Create(const double observed_x,
+                                     const double observed_y)
+  {
     return (new ceres::AutoDiffCostFunction<ReprojectionError, 2, 6, 3>(
-                new ReprojectionError(observed_x, observed_y)));
+        new ReprojectionError(observed_x, observed_y)));
   }
 
   double observed_x;
@@ -614,6 +617,7 @@ void BasicSfM::solve()
       recoverPose(E, points0, points1, intrinsics_matrix, init_r_mat, init_t);
       seed_found = true;
     }
+    
 
 #pragma endregion
   }
@@ -847,10 +851,10 @@ void BasicSfM::bundleAdjustmentIter(int new_cam_idx)
 
         double *camera = cameraBlockPtr(pose_index_[i_obs]);
         double *point = pointBlockPtr(point_index_[i_obs]);
-  
-        ceres::CostFunction* cost_function = ReprojectionError::Create(
-                                              observations_[2 * i_obs], 
-                                              observations_[2 * i_obs + 1]);
+
+        ceres::CostFunction *cost_function = ReprojectionError::Create(
+            observations_[2 * i_obs],
+            observations_[2 * i_obs + 1]);
 
         problem.AddResidualBlock(cost_function, new ceres::CauchyLoss(2 * max_reproj_err_), camera, point);
       }

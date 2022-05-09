@@ -43,7 +43,7 @@ void FeatureMatcher::extractFeatures()
   descriptors_.resize(images_names_.size());
   feats_colors_.resize(images_names_.size());
 
-  //Ptr<xfeatures2d::SIFT> siftPtr = xfeatures2d::SIFT::create();
+
   cv::Ptr<cv::SIFT> siftPtr = cv::SIFT::create();
 
   for (int i = 0; i < images_names_.size(); i++)
@@ -103,7 +103,7 @@ void FeatureMatcher::exhaustiveMatching()
 
 
       //-- Filter matches using the Lowe's ratio test
-      const float ratio_thresh = 1; //s0.75f;
+      const float ratio_thresh = 1;
       vector<DMatch> good_matches;
       for (int k = 0; k < knn_matches.size(); k++)
       {
