@@ -5,6 +5,8 @@
 
 using namespace std;
 using namespace cv;
+using namespace cv::xfeatures2d;
+
 
 namespace
 {
@@ -44,7 +46,7 @@ void FeatureMatcher::extractFeatures()
   feats_colors_.resize(images_names_.size());
 
 
-  cv::Ptr<cv::SIFT> siftPtr = cv::SIFT::create();
+  cv::Ptr<SIFT> siftPtr = SIFT::create();
 
   for (int i = 0; i < images_names_.size(); i++)
   {
@@ -96,15 +98,14 @@ void FeatureMatcher::exhaustiveMatching()
       // (i.e., geomatrically verified matches) is small (say <= 10 matches)
       /////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma region Luca 4 / 05 / 2022
+
       //--Match descriptors: Since is a floating-point descriptor NORM_L2 is used
       vector<vector<DMatch>> knn_matches;
       matcher->knnMatch(descriptors_[i], descriptors_[j], knn_matches, 2);
 
-
       //-- Filter matches using the Lowe's ratio test
-      const float ratio_thresh = 1;
-      vector<DMatch> good_matches;
+      const float ratio_thresh = 1;     //-- 0,75f --> 1 to get higher number of matches
+      vector<DMatch> good_matches;      //-- we should use matches variable
       for (int k = 0; k < knn_matches.size(); k++)
       {
         if (knn_matches[k][0].distance < ratio_thresh * knn_matches[k][1].distance)
@@ -121,20 +122,12 @@ void FeatureMatcher::exhaustiveMatching()
     
       for (int l = 0; l < good_matches.size()-1; l++)
       {
-        // cout<<"   ITERATION "<<l<<endl;
-        // cout<<"     good_matches["<<l<<"].queryIdx: "<<good_matches[l].queryIdx<<endl;
-        // cout<<"     good_matches["<<l<<"].trainIdx: "<<good_matches[l].trainIdx<<endl;
-        // cout<<"     features_["<<l<<"]"<<features_[i].size()<<endl;
-        // cout<<"     features_["<<l<<"]"<<features_[j].size()<<endl;
-        //-- Get the keypoints from the good matches
         imageI_keyPoints.push_back(features_[i][good_matches[l].queryIdx].pt);
         imageJ_keyPoints.push_back(features_[j][good_matches[l].trainIdx].pt);
       }
 
       Mat mask_H, mask_F, mask_E;
-     
-
-
+    
       //-- Homography matrix H
       Mat H = findHomography(imageI_keyPoints, imageJ_keyPoints, RANSAC, 3,mask_H);
 
@@ -143,53 +136,47 @@ void FeatureMatcher::exhaustiveMatching()
 
       //-- Essential matrix E
       Mat E = findEssentialMat(imageI_keyPoints, imageJ_keyPoints, new_intrinsics_matrix_, RANSAC, 0.999, 1.0, mask_E);
-
-
       
       //--Find Inliers for matrix H
-      //cout<< "Inliers Matches for matrix H : ("<<mask_H.rows<<" , "<<mask_H.cols<<" )"<< endl;
+      std::cout<< "Inliers Matches for matrix F : ("<<mask_F.rows<<" , "<<mask_F.cols<<" )"<< endl;
+      std::cout<< "Inliers Matches for matrix H : ("<<mask_H.rows<<" , "<<mask_H.cols<<" )"<< endl;
+      std::cout<< "Inliers Matches for matrix E : ("<<mask_E.rows<<" , "<<mask_E.cols<<" )"<< endl;
+
+      //--N.B. You can use only one FOR instead of three (same rows for all the 3 masks)
+
+      //--Find Inliers for matrix F
       vector<int> indexes_inlierMatches_H;
       for (int k = 0; k < mask_H.rows; k++)
       {
           // Select only the inliers (mask entry set to 1)
           if ((int)mask_H.at<uchar>(k, 0) == 1)
           {
-              //std::cout << k << ", ";
               indexes_inlierMatches_H.push_back(k);
           }
       }
-      std::cout << std::endl;
-
-
-//################### USE ONLY ONE FOR
+      
       //--Find Inliers for matrix F
-      //cout<< "Inliers Matches for matrix F : ("<<mask_F.rows<<" , "<<mask_F.cols<<" )"<< endl;
       vector<int> indexes_inlierMatches_F;
-      for (int k = 0; k < mask_H.rows; k++)
+      for (int k = 0; k < mask_F.rows; k++)
       {
           // Select only the inliers (mask entry set to 1)
           if ((int)mask_F.at<uchar>(k, 0) == 1)
           {
-              //std::cout << k << ", ";
               indexes_inlierMatches_F.push_back(k);
           }
       }
-      std::cout << std::endl;
 
 
       //--Find Inliers for matrix E
-      //cout<< "Inliers Matches for matrix E : ("<<mask_E.rows<<" , "<<mask_E.cols<<" )"<< endl;
       vector<int> indexes_inlierMatches_E;
-      for (int k = 0; k < mask_H.rows; k++)
+      for (int k = 0; k < mask_E.rows; k++)
       {
           // Select only the inliers (mask entry set to 1)
           if ((int)mask_E.at<uchar>(k, 0) == 1)
           {
-              //std::cout << k << ", ";
               indexes_inlierMatches_E.push_back(k);
           }
       }
-      std::cout << std::endl;
       
 
       //-- Find the number of inliers matches for each Model

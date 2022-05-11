@@ -542,7 +542,7 @@ void BasicSfM::solve()
 
   std::vector<cv::Point2d> points0, points1;
   cv::Mat inlier_mask_E, inlier_mask_H;
-
+  int iter=0;
   while (!seed_found)
   {
     points0.clear();
@@ -561,6 +561,7 @@ void BasicSfM::solve()
         }
       }
     }
+    std::cout <<"\n\niter: "<<iter<<"\nref_pose_idx: " <<ref_pose_idx<<"\nnew_pose_idx: " <<new_pose_idx<<std::endl;
 
     if (max_corr < 0)
     {
@@ -605,10 +606,16 @@ void BasicSfM::solve()
     {
       // Select only the inliers (mask entry set to 1)
       if ((int)inlier_mask_H.at<uchar>(k, 0) == 1)
+      {
         num_inlier_H++;
+      }
       if ((int)inlier_mask_E.at<uchar>(k, 0) == 1)
+      {
         num_inlier_E++;
+      }
     }
+
+    std::cout<<"\nnum_inlier_H: "<<num_inlier_H<<"\nnum_inlier_E: "<<num_inlier_E<<endl;
 
     if (num_inlier_E > num_inlier_H)
     {
@@ -616,6 +623,7 @@ void BasicSfM::solve()
       // and new_pose_idx ( -> store it into init_r_mat and  init_t; defined above <-)
       recoverPose(E, points0, points1, intrinsics_matrix, init_r_mat, init_t);
       seed_found = true;
+      std::cout<<"\nseed_found "<<seed_found<<endl;
     }
     
 
