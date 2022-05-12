@@ -23,7 +23,6 @@ struct ReprojectionError
   // WARNING: When dealing with the AutoDiffCostFunction template parameters,
   // pay attention to the order of the template parameters
   //////////////////////////////////////////////////////////////////////////////////////////
-#pragma region Alberto 06 / 05 / 2022
 
   ReprojectionError(double observed_x, double observed_y)
       : observed_x(observed_x), observed_y(observed_y)
@@ -65,7 +64,6 @@ struct ReprojectionError
   double observed_x;
   double observed_y;
 };
-#pragma endregion
 
 /* As ReprojectionError, but the camera parameters are fixed */
 struct PointReprojectionError
@@ -542,7 +540,7 @@ void BasicSfM::solve()
 
   std::vector<cv::Point2d> points0, points1;
   cv::Mat inlier_mask_E, inlier_mask_H;
-  int iter=0;
+  int iter = 0;
   while (!seed_found)
   {
     points0.clear();
@@ -561,7 +559,7 @@ void BasicSfM::solve()
         }
       }
     }
-    std::cout <<"\n\niter: "<<iter<<"\nref_pose_idx: " <<ref_pose_idx<<"\nnew_pose_idx: " <<new_pose_idx<<std::endl;
+    std::cout << "\n\niter: " << iter << "\nref_pose_idx: " << ref_pose_idx << "\nnew_pose_idx: " << new_pose_idx << std::endl;
 
     if (max_corr < 0)
     {
@@ -593,10 +591,9 @@ void BasicSfM::solve()
     //   seed_found = true;
     // should be replaced with the criteria described above
     /////////////////////////////////////////////////////////////////////////////////////////
-#pragma region Luca 05 / 05 / 2022
+
     //-- Homography matrix H
     Mat H = findHomography(points0, points1, RANSAC, 3, inlier_mask_H);
-
     //-- Essential matrix E
     Mat E = findEssentialMat(points0, points1, intrinsics_matrix, RANSAC, 0.999, 1.0, inlier_mask_E);
 
@@ -615,7 +612,7 @@ void BasicSfM::solve()
       }
     }
 
-    std::cout<<"\nnum_inlier_H: "<<num_inlier_H<<"\nnum_inlier_E: "<<num_inlier_E<<endl;
+    std::cout << "\nnum_inlier_H: " << num_inlier_H << "\nnum_inlier_E: " << num_inlier_E << endl;
 
     if (num_inlier_E > num_inlier_H)
     {
@@ -623,11 +620,8 @@ void BasicSfM::solve()
       // and new_pose_idx ( -> store it into init_r_mat and  init_t; defined above <-)
       recoverPose(E, points0, points1, intrinsics_matrix, init_r_mat, init_t);
       seed_found = true;
-      std::cout<<"\nseed_found "<<seed_found<<endl;
+      std::cout << "\nseed_found " << seed_found << endl;
     }
-    
-
-#pragma endregion
   }
 
   // Initialize the first optimized poses, by integrating them into the registration
@@ -864,6 +858,7 @@ void BasicSfM::bundleAdjustmentIter(int new_cam_idx)
             observations_[2 * i_obs],
             observations_[2 * i_obs + 1]);
 
+        //--add residual block inside the Ceres solver problem
         problem.AddResidualBlock(cost_function, new ceres::CauchyLoss(2 * max_reproj_err_), camera, point);
       }
     }

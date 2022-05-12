@@ -7,7 +7,6 @@ using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
 
-
 namespace
 {
   template <typename T>
@@ -45,7 +44,6 @@ void FeatureMatcher::extractFeatures()
   descriptors_.resize(images_names_.size());
   feats_colors_.resize(images_names_.size());
 
-
   cv::Ptr<SIFT> siftPtr = SIFT::create();
 
   for (int i = 0; i < images_names_.size(); i++)
@@ -64,22 +62,24 @@ void FeatureMatcher::extractFeatures()
     Mat descriptors;
     vector<Vec3b> feats_colors;
 
+    //--Detect and compute features for img
     siftPtr->detect(img, features);
     siftPtr->compute(img, features, descriptors);
 
     for (auto keypoint : features)
       feats_colors.push_back(img.at<cv::Vec3b>(cv::Point(keypoint.pt.x, keypoint.pt.y)));
 
-    features_[i]=features;
-    descriptors_[i]=descriptors;
-    feats_colors_[i]=feats_colors;
+    //--insert values inside vectors
+    features_[i] = features;
+    descriptors_[i] = descriptors;
+    feats_colors_[i] = feats_colors;
   }
 }
 
 void FeatureMatcher::exhaustiveMatching()
 {
-
-  Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED); //--Luca 04/05/2022
+  //--FLANNBASED matcher
+  Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED); 
   for (int i = 0; i < images_names_.size() - 1; i++)
   {
     for (int j = i + 1; j < images_names_.size(); j++)
@@ -98,123 +98,102 @@ void FeatureMatcher::exhaustiveMatching()
       // (i.e., geomatrically verified matches) is small (say <= 10 matches)
       /////////////////////////////////////////////////////////////////////////////////////////
 
-
-      //--Match descriptors: Since is a floating-point descriptor NORM_L2 is used
+      //--Match descriptors
       vector<vector<DMatch>> knn_matches;
       matcher->knnMatch(descriptors_[i], descriptors_[j], knn_matches, 2);
 
       //-- Filter matches using the Lowe's ratio test
-      const float ratio_thresh = 1;     //-- 0,75f --> 1 to get higher number of matches
-      vector<DMatch> good_matches;      //-- we should use matches variable
+      const float ratio_thresh = 0.9;                   
+
       for (int k = 0; k < knn_matches.size(); k++)
       {
         if (knn_matches[k][0].distance < ratio_thresh * knn_matches[k][1].distance)
         {
-          good_matches.push_back(knn_matches[k][0]);
+          matches.push_back(knn_matches[k][0]);
         }
       }
-
 
       //-- Localize the object
       std::vector<Point2f> imageI_keyPoints;
       std::vector<Point2f> imageJ_keyPoints;
 
-    
-      for (int l = 0; l < good_matches.size()-1; l++)
+      for (int l = 0; l < matches.size() - 1; l++)
       {
-        imageI_keyPoints.push_back(features_[i][good_matches[l].queryIdx].pt);
-        imageJ_keyPoints.push_back(features_[j][good_matches[l].trainIdx].pt);
+        imageI_keyPoints.push_back(features_[i][matches[l].queryIdx].pt);
+        imageJ_keyPoints.push_back(features_[j][matches[l].trainIdx].pt);
       }
 
       Mat mask_H, mask_F, mask_E;
-    
+
       //-- Homography matrix H
-      Mat H = findHomography(imageI_keyPoints, imageJ_keyPoints, RANSAC, 3,mask_H);
+      Mat H = findHomography(imageI_keyPoints, imageJ_keyPoints, RANSAC, 3, mask_H);
 
       //-- Fundamental matrix F
       Mat F = findFundamentalMat(imageI_keyPoints, imageJ_keyPoints, FM_RANSAC, 3, 0.99, mask_F);
 
       //-- Essential matrix E
       Mat E = findEssentialMat(imageI_keyPoints, imageJ_keyPoints, new_intrinsics_matrix_, RANSAC, 0.999, 1.0, mask_E);
-      
+
       //--Find Inliers for matrix H
-      std::cout<< "Inliers Matches for matrix F : ("<<mask_F.rows<<" , "<<mask_F.cols<<" )"<< endl;
-      std::cout<< "Inliers Matches for matrix H : ("<<mask_H.rows<<" , "<<mask_H.cols<<" )"<< endl;
-      std::cout<< "Inliers Matches for matrix E : ("<<mask_E.rows<<" , "<<mask_E.cols<<" )"<< endl;
+      std::cout << "Inliers Matches for matrix F : (" << mask_F.rows << " , " << mask_F.cols << " )" << endl;
+      std::cout << "Inliers Matches for matrix H : (" << mask_H.rows << " , " << mask_H.cols << " )" << endl;
+      std::cout << "Inliers Matches for matrix E : (" << mask_E.rows << " , " << mask_E.cols << " )" << endl;
 
-      //--N.B. You can use only one FOR instead of three (same rows for all the 3 masks)
+      //--Find Inliers
+      vector<int> indexes_inlierMatches_H; //--Matrix H
+      vector<int> indexes_inlierMatches_F; //--Matrix F
+      vector<int> indexes_inlierMatches_E; //--Matrix E
 
-      //--Find Inliers for matrix F
-      vector<int> indexes_inlierMatches_H;
       for (int k = 0; k < mask_H.rows; k++)
       {
-          // Select only the inliers (mask entry set to 1)
-          if ((int)mask_H.at<uchar>(k, 0) == 1)
-          {
-              indexes_inlierMatches_H.push_back(k);
-          }
+        if ((int)mask_H.at<uchar>(k, 0) == 1)
+        {
+          // Select only the inliers (mask H entry set to 1)
+          indexes_inlierMatches_H.push_back(k);
+        }
+        if ((int)mask_F.at<uchar>(k, 0) == 1)
+        {
+          // Select only the inliers (mask F entry set to 1)
+          indexes_inlierMatches_F.push_back(k);
+        }
+        if ((int)mask_E.at<uchar>(k, 0) == 1)
+        {
+          // Select only the inliers (mask E entry set to 1)
+          indexes_inlierMatches_E.push_back(k);
+        }
       }
-      
-      //--Find Inliers for matrix F
-      vector<int> indexes_inlierMatches_F;
-      for (int k = 0; k < mask_F.rows; k++)
-      {
-          // Select only the inliers (mask entry set to 1)
-          if ((int)mask_F.at<uchar>(k, 0) == 1)
-          {
-              indexes_inlierMatches_F.push_back(k);
-          }
-      }
-
-
-      //--Find Inliers for matrix E
-      vector<int> indexes_inlierMatches_E;
-      for (int k = 0; k < mask_E.rows; k++)
-      {
-          // Select only the inliers (mask entry set to 1)
-          if ((int)mask_E.at<uchar>(k, 0) == 1)
-          {
-              indexes_inlierMatches_E.push_back(k);
-          }
-      }
-      
 
       //-- Find the number of inliers matches for each Model
-      cout<< "  NUMBER INLIERS MATCHES :"<< endl;
-      int num_inMatch_H=indexes_inlierMatches_H.size();
-      int num_inMatch_F=indexes_inlierMatches_F.size();
-      int num_inMatch_E=indexes_inlierMatches_E.size();
+      cout << "  NUMBER INLIERS MATCHES :" << endl;
+      int num_inMatch_H = indexes_inlierMatches_H.size();
+      int num_inMatch_F = indexes_inlierMatches_F.size();
+      int num_inMatch_E = indexes_inlierMatches_E.size();
 
-      cout<< "    indexes_inlierMatches_H: "<<num_inMatch_H<< endl;
-      cout<< "    indexes_inlierMatches_F: "<<num_inMatch_F<< endl;
-      cout<< "    indexes_inlierMatches_E: "<<num_inMatch_E<< endl;
+      cout << "    indexes_inlierMatches_H: " << num_inMatch_H << endl;
+      cout << "    indexes_inlierMatches_F: " << num_inMatch_F << endl;
+      cout << "    indexes_inlierMatches_E: " << num_inMatch_E << endl;
 
-      
       //-- Find the best Model
       vector<int> finalIndexes_Inliers;
-      if((num_inMatch_H>=num_inMatch_F)&&(num_inMatch_H>=num_inMatch_E))
+      if ((num_inMatch_H >= num_inMatch_F) && (num_inMatch_H >= num_inMatch_E))
       {
-          finalIndexes_Inliers=indexes_inlierMatches_H;
+        finalIndexes_Inliers = indexes_inlierMatches_H;
       }
-      else if((num_inMatch_F>=num_inMatch_H)&&(num_inMatch_F>=num_inMatch_E))
+      else if ((num_inMatch_F >= num_inMatch_H) && (num_inMatch_F >= num_inMatch_E))
       {
-        finalIndexes_Inliers=indexes_inlierMatches_F;
+        finalIndexes_Inliers = indexes_inlierMatches_F;
       }
-      else 
+      else
       {
-        finalIndexes_Inliers=indexes_inlierMatches_E;
+        finalIndexes_Inliers = indexes_inlierMatches_E;
       }
 
-      //-- Create Inlier Matches
-      if(finalIndexes_Inliers.size()>10)
+      //-- Create Inlier Matches if size is greater than 10
+      if (finalIndexes_Inliers.size() > 10)
         for (int i = 0; i < finalIndexes_Inliers.size(); i++)
         {
-          inlier_matches.push_back(good_matches[finalIndexes_Inliers[i]]);
+          inlier_matches.push_back(matches[finalIndexes_Inliers[i]]);
         }
-      
-
-
-#pragma endregion
 
       setMatches(i, j, inlier_matches);
     }
