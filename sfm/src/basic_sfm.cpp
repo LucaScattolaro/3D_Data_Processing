@@ -34,20 +34,20 @@ struct ReprojectionError
                   const T *const point,
                   T *residuals) const
   {
-    // camera[0,1,2] are the angle-axis rotation.
+    //--camera[0,1,2] are the angle-axis rotation.
     T p[3];
     ceres::AngleAxisRotatePoint(camera, point, p);
 
-    // camera[3,4,5] are the translation.
+    //--camera[3,4,5] are the translation.
     p[0] += camera[3];
     p[1] += camera[4];
     p[2] += camera[5];
 
-    // Compute projected point position.
+    //--Compute projected point position.
     const T predicted_x = p[0] / p[2];
     const T predicted_y = p[1] / p[2];
 
-    // The error is the difference between the predicted and observed position.
+    //--The error is the difference between the predicted and observed position.
     residuals[0] = predicted_x - T(observed_x);
     residuals[1] = predicted_y - T(observed_y);
 
