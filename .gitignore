@@ -34,5 +34,5 @@
 # Directories
 dataset/
 build/
-vscode/
+.vscode/
 
