@@ -1,5 +1,7 @@
 #include "Registration.h"
 
+using namespace std;
+
 Registration::Registration(std::string cloud_source_filename, std::string cloud_target_filename)
 {
   // TO COMPLETE
@@ -30,14 +32,13 @@ void Registration::preprocess(open3d::geometry::PointCloud pcd, double voxel_siz
   // TO COMPLETE
   // downsample
   double radius_normal = voxel_size * 2;
-  std::shared_ptr<open3d::geometry::PointCloud> pcd_down_ptr = pcd.VoxelDownSample(voxel_size);
+  pcd_down_ptr = pcd.VoxelDownSample(voxel_size);
 
   // Estimate point cloud normals
   pcd_down_ptr->EstimateNormals(open3d::geometry::KDTreeSearchParamHybrid(radius_normal, 30));
 
   // Compute FPFH features
   double radius_feature = voxel_size * 5;
-  std::shared_ptr<open3d::pipelines::registration::Feature> pcd_fpfh;
   pcd_fpfh = open3d::pipelines::registration::ComputeFPFHFeature(*pcd_down_ptr, open3d::geometry::KDTreeSearchParamHybrid(radius_feature, 100));
 
   return;
@@ -52,18 +53,27 @@ open3d::pipelines::registration::RegistrationResult Registration::execute_global
   // TO COMPLETE
   open3d::pipelines::registration::RegistrationResult result;
 
-  Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
-  double threshold = 0.02;
-  double relative_fitness = 1e-6;
-  double relative_rmse = 1e-6;
-  int max_iteration = 1000;
-  auto result = open3d::pipelines::registration::RegistrationICP(
-      source_,
-      target_,
-      threshold,
-      transformation_,
-      open3d::pipelines::registration::TransformationEstimationPointToPoint(),
-      open3d::pipelines::registration::ICPConvergenceCriteria(relative_fitness, relative_rmse, max_iteration));
+  std::shared_ptr<open3d::geometry::PointCloud> source_down, target_down;
+  std::shared_ptr<open3d::pipelines::registration::Feature> source_fpfh, target_fpfh;
+
+  preprocess(source_, voxel_size, source_down, source_fpfh);
+  preprocess(target_, voxel_size, target_down, target_fpfh);
+
+  double distance_threshold = voxel_size * 1.5;
+
+  auto vect;//{open3d::pipelines::registration::CorrespondenceCheckerBasedOnEdgeLength(0.9),open3d::pipelines::registration::CorrespondenceCheckerBasedOnDistance(distance_threshold)};
+
+  cout << ":: RANSAC registration on downsampled point clouds." << endl;
+  cout << "   Since the downsampling voxel size is: " << voxel_size << endl;
+  cout << "   we use a liberal distance threshold " << distance_threshold << endl;
+  result = open3d::pipelines::registration::RegistrationRANSACBasedOnFeatureMatching(
+      *source_down, *target_down, *source_fpfh, *target_fpfh, true, distance_threshold,
+      open3d::pipelines::registration::TransformationEstimationPointToPoint(false),
+      3,vect,
+      open3d::pipelines::registration::RANSACConvergenceCriteria(100000, 0.999)
+      );
+
+  set_transformation(result.transformation_);
 
   return result;
 }
@@ -71,6 +81,14 @@ open3d::pipelines::registration::RegistrationResult Registration::execute_global
 open3d::pipelines::registration::RegistrationResult Registration::execute_icp_registration(double threshold, double relative_fitness, double relative_rmse, int max_iteration)
 {
   open3d::pipelines::registration::RegistrationResult result;
+
+  result = open3d::pipelines::registration::RegistrationICP(
+      source_,
+      target_,
+      threshold,
+      transformation_,
+      open3d::pipelines::registration::TransformationEstimationPointToPoint(),
+      open3d::pipelines::registration::ICPConvergenceCriteria(relative_fitness, relative_rmse, max_iteration));
   return result;
 }
 
