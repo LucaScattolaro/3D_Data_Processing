@@ -612,7 +612,6 @@ void BasicSfM::solve()
       }
     }
 
-    std::cout << "\nnum_inlier_H: " << num_inlier_H << "\nnum_inlier_E: " << num_inlier_E << endl;
 
     if (num_inlier_E > num_inlier_H)
     {
@@ -620,7 +619,6 @@ void BasicSfM::solve()
       // and new_pose_idx ( -> store it into init_r_mat and  init_t; defined above <-)
       recoverPose(E, points0, points1, intrinsics_matrix, init_r_mat, init_t);
       seed_found = true;
-      std::cout << "\nseed_found " << seed_found << endl;
     }
   }
 

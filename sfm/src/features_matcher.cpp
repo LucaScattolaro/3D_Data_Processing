@@ -135,10 +135,6 @@ void FeatureMatcher::exhaustiveMatching()
       Mat E = findEssentialMat(imageI_keyPoints, imageJ_keyPoints, new_intrinsics_matrix_, RANSAC, 0.999, 1.0, mask_E);
 
       
-      std::cout << "Inliers Matches for matrix F : (" << mask_F.rows << " , " << mask_F.cols << " )" << endl;
-      std::cout << "Inliers Matches for matrix H : (" << mask_H.rows << " , " << mask_H.cols << " )" << endl;
-      std::cout << "Inliers Matches for matrix E : (" << mask_E.rows << " , " << mask_E.cols << " )" << endl;
-
       //--Find Inliers
       vector<int> indexes_inlierMatches_H; //--Matrix H
       vector<int> indexes_inlierMatches_F; //--Matrix F
@@ -166,14 +162,11 @@ void FeatureMatcher::exhaustiveMatching()
       }
 
       //-- Find the number of inliers matches for each Model
-      cout << "  NUMBER INLIERS MATCHES :" << endl;
+      
       int num_inMatch_H = indexes_inlierMatches_H.size();
       int num_inMatch_F = indexes_inlierMatches_F.size();
       int num_inMatch_E = indexes_inlierMatches_E.size();
 
-      cout << "    indexes_inlierMatches_H: " << num_inMatch_H << endl;
-      cout << "    indexes_inlierMatches_F: " << num_inMatch_F << endl;
-      cout << "    indexes_inlierMatches_E: " << num_inMatch_E << endl;
 
       //-- Find the best Model
       vector<int> finalIndexes_Inliers;
