@@ -103,7 +103,7 @@ void FeatureMatcher::exhaustiveMatching()
       matcher->knnMatch(descriptors_[i], descriptors_[j], knn_matches, 2);
 
       //-- Filter matches using the Lowe's ratio test
-      const float ratio_thresh = 0.9;                   
+      const float ratio_thresh = 0.8;                   
 
       for (int k = 0; k < knn_matches.size(); k++)
       {
@@ -134,7 +134,7 @@ void FeatureMatcher::exhaustiveMatching()
       //-- Essential matrix E
       Mat E = findEssentialMat(imageI_keyPoints, imageJ_keyPoints, new_intrinsics_matrix_, RANSAC, 0.999, 1.0, mask_E);
 
-      //--Find Inliers for matrix H
+      
       std::cout << "Inliers Matches for matrix F : (" << mask_F.rows << " , " << mask_F.cols << " )" << endl;
       std::cout << "Inliers Matches for matrix H : (" << mask_H.rows << " , " << mask_H.cols << " )" << endl;
       std::cout << "Inliers Matches for matrix E : (" << mask_E.rows << " , " << mask_E.cols << " )" << endl;
@@ -144,6 +144,8 @@ void FeatureMatcher::exhaustiveMatching()
       vector<int> indexes_inlierMatches_F; //--Matrix F
       vector<int> indexes_inlierMatches_E; //--Matrix E
 
+
+      //--All have same number of rows
       for (int k = 0; k < mask_H.rows; k++)
       {
         if ((int)mask_H.at<uchar>(k, 0) == 1)
