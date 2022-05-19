@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # 3DP Lab2 Structure from Motion
+=======
+# 3DP Lab2 Structure from Motion# 3DP Lab2 Structure from Motion
+>>>>>>> 95a4eeae72bb6bf16ff016641ff864f9452a68e2
 
 This project has been done by Alberto Rigon (2019136) and Luca Scattolaro (2019157)
 
@@ -13,4 +17,8 @@ SFM APP:
 ## YML 
 our_cam.yml : Dataset 3 and 4
 
+<<<<<<< HEAD
 3dp_cam.yml : Dataset 1 and 2
+=======
+3dp_cam.yml : Dataset 1 and 2
+>>>>>>> 95a4eeae72bb6bf16ff016641ff864f9452a68e2
