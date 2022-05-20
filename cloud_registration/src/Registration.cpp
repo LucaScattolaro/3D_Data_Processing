@@ -24,10 +24,11 @@ void Registration::draw_registration_result()
 {
   // visualize target and source with two different colors
   //  TO COMPLETE 1/5
-  
 
-  open3d::geometry::PointCloud source_temp=source_;
-  open3d::geometry::PointCloud target_temp=target_;
+  open3d::geometry::PointCloud source_temp = source_;
+  open3d::geometry::PointCloud target_temp = target_;
+  source_temp.Transform(transformation_);
+
 
   source_temp.PaintUniformColor({1, 0.706, 0});
   target_temp.PaintUniformColor({0, 0.651, 0.929});
@@ -35,8 +36,7 @@ void Registration::draw_registration_result()
   auto source_pointer = std::make_shared<open3d::geometry::PointCloud>(source_temp);
   auto target_pointer = std::make_shared<open3d::geometry::PointCloud>(target_temp);
 
-
-  open3d::visualization::DrawGeometries({source_pointer,target_pointer});
+  open3d::visualization::DrawGeometries({source_pointer, target_pointer});
 }
 
 void Registration::preprocess(open3d::geometry::PointCloud pcd, double voxel_size, std::shared_ptr<open3d::geometry::PointCloud> &pcd_down_ptr, std::shared_ptr<open3d::pipelines::registration::Feature> &pcd_fpfh)
@@ -65,52 +65,75 @@ open3d::pipelines::registration::RegistrationResult Registration::execute_global
   // call the Registration::preprocess function on target and transformed source
   // execute global transformation and update the transformation matrix
   // TO COMPLETE
-  
-  open3d::pipelines::registration::RegistrationResult result;
 
+  // open3d::pipelines::registration::RegistrationResult result;
 
-  //--Applying the transformation_ matrix to source_cloud
+  // //--Applying the transformation_ matrix to source_cloud
+  // source_.Transform(transformation_);
+
+  // //--Create two point cloud to contain the downsampled point cloud and two structure to contain the features
+  // std::shared_ptr<open3d::geometry::PointCloud> source_down, target_down;
+  // std::shared_ptr<open3d::pipelines::registration::Feature> source_fpfh, target_fpfh;
+
+  // //--preprocess target and transformed source
+  // preprocess(source_, voxel_size, source_down, source_fpfh);
+  // preprocess(target_, voxel_size, target_down, target_fpfh);
+
+  // double distance_threshold = voxel_size * 1.5;
+  // vector<reference_wrapper<const open3d::pipelines::registration::CorrespondenceChecker>> correspondenceCheckers;
+
+  // auto correspondenceCheckerEdgeLength=open3d::pipelines::registration::CorrespondenceCheckerBasedOnEdgeLength(0.9);
+  // auto correspondenceCheckerBasedOnDistance=open3d::pipelines::registration::CorrespondenceCheckerBasedOnDistance(distance_threshold);
+
+  // correspondenceCheckers.push_back(correspondenceCheckerEdgeLength);
+  // correspondenceCheckers.push_back(correspondenceCheckerBasedOnDistance);
+
+  // cout << ":: RANSAC registration on downsampled point clouds." << endl;
+  // cout << "   Since the downsampling voxel size is: " << voxel_size << endl;
+  // cout << "   we use a liberal distance threshold " << distance_threshold << endl;
+  // result = open3d::pipelines::registration::RegistrationRANSACBasedOnFeatureMatching(
+  //     *source_down, *target_down, *source_fpfh, *target_fpfh, true, distance_threshold,
+  //     open3d::pipelines::registration::TransformationEstimationPointToPoint(false),
+  //     3,correspondenceCheckers,
+  //     open3d::pipelines::registration::RANSACConvergenceCriteria(100000, 0.999)
+  //     );
+
+  // //--update the transformation matrix
+  // set_transformation(result.transformation_);
+
+  // source_ = *source_down;
+  // target_ = *target_down;
+  // return result;
+
   source_.Transform(transformation_);
 
-  //--Create two point cloud to contain the downsampled point cloud and two structure to contain the features
-  std::shared_ptr<open3d::geometry::PointCloud> source_down, target_down;
-  std::shared_ptr<open3d::pipelines::registration::Feature> source_fpfh, target_fpfh;
+  // Initialize point cloud and FPFH feature pointers
+  std::shared_ptr<open3d::geometry::PointCloud> source_pcd_down_ptr, target_pcd_down_ptr;
+  std::shared_ptr<open3d::pipelines::registration::Feature> source_pcd_fpfh, target_pcd_fpfh;
 
-  //--preprocess target and transformed source
-  preprocess(source_, voxel_size, source_down, source_fpfh);
-  preprocess(target_, voxel_size, target_down, target_fpfh);
+  // Pre-processing source and target point clouds
+  preprocess(source_, voxel_size, source_pcd_down_ptr, source_pcd_fpfh);
+  preprocess(target_, voxel_size, target_pcd_down_ptr, target_pcd_fpfh);
 
+  open3d::pipelines::registration::RegistrationResult result;
 
+  double distance_threshold = 0.5 * voxel_size;
 
-  double distance_threshold = voxel_size * 1.5;
-  vector<reference_wrapper<const open3d::pipelines::registration::CorrespondenceChecker>> correspondenceCheckers;
+  result = open3d::pipelines::registration::FastGlobalRegistrationBasedOnFeatureMatching(
+      *source_pcd_down_ptr,
+      *target_pcd_down_ptr,
+      *source_pcd_fpfh,
+      *target_pcd_fpfh,
+      open3d::pipelines::registration::FastGlobalRegistrationOption(1.4, false, true, distance_threshold));
 
-  auto correspondenceCheckerEdgeLength=open3d::pipelines::registration::CorrespondenceCheckerBasedOnEdgeLength(0.9);
-  auto correspondenceCheckerBasedOnDistance=open3d::pipelines::registration::CorrespondenceCheckerBasedOnDistance(distance_threshold);
-  
-  correspondenceCheckers.push_back(correspondenceCheckerEdgeLength);
-  correspondenceCheckers.push_back(correspondenceCheckerBasedOnDistance);
-
-
-
-
-  cout << ":: RANSAC registration on downsampled point clouds." << endl;
-  cout << "   Since the downsampling voxel size is: " << voxel_size << endl;
-  cout << "   we use a liberal distance threshold " << distance_threshold << endl;
-  result = open3d::pipelines::registration::RegistrationRANSACBasedOnFeatureMatching(
-      *source_down, *target_down, *source_fpfh, *target_fpfh, true, distance_threshold,
-      open3d::pipelines::registration::TransformationEstimationPointToPoint(false),
-      3,correspondenceCheckers,
-      open3d::pipelines::registration::RANSACConvergenceCriteria(100000, 0.999)
-      );
-
-
-  //--update the transformation matrix
+  // Update transformation
   set_transformation(result.transformation_);
 
+  // Update source and target point clouds
+  // source_ = *source_pcd_down_ptr;
+  // target_ = *target_pcd_down_ptr;
 
-  source_ = *source_down;
-  target_ = *target_down;
+  // Return result
   return result;
 }
 
