@@ -1,1 +1,11 @@
+
+DATASET 1:
+
 ./registration /home/luca/Documenti/University/3D_Data_Processing_Lab3/data/one/source.ply /home/luca/Documenti/University/3D_Data_Processing_Lab3/data/one/target.ply /home/luca/Documenti/University/3D_Data_Processing_Lab3/data/one/output_transformation_matrix.txt /home/luca/Documenti/University/3D_Data_Processing_Lab3/data/one/fused_cloud.ply
+
+
+
+
+DATASET 2:
+
+./registration /home/luca/Documenti/University/3D_Data_Processing_Lab3/data/two/source.ply /home/luca/Documenti/University/3D_Data_Processing_Lab3/data/two/target.ply /home/luca/Documenti/University/3D_Data_Processing_Lab3/data/two/output_transformation_matrix.txt /home/luca/Documenti/University/3D_Data_Processing_Lab3/data/two/fused_cloud.ply
