@@ -6,12 +6,12 @@ the target cloud
 ## Implementation Details
 The implementation has been done in C++ by using Open3D library.
 In order to complete the methods:
-– Registration(...) : constructor.
-– drawregistrationresult(...) : method to visualize target and source with two different colors.
-– preprocess(...): method to downsample, estimate normals and compute FPFH features.
-– executeglobalregistration(): method to execute the global registration. I decide to use (and keep in the code)
+* Registration(...) : constructor.
+* drawregistrationresult(...) : method to visualize target and source with two different colors.
+* preprocess(...): method to downsample, estimate normals and compute FPFH features.
+* executeglobalregistration(): method to execute the global registration. I decide to use (and keep in the code)
 RANSAC for global registration but I also tried Fast global registration.
-– executeicpregistration(...): method to refine the result
+* executeicpregistration(...): method to refine the result
 
 
 ## Results
