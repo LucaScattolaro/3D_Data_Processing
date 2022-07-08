@@ -1,3 +1,0 @@
-Left Image MSE error: 19.9633
-Right Image MSE error: 25.1564
-
