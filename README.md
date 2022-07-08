@@ -19,3 +19,7 @@ we should perturb the disparity at position (x,y) by a factor of deltaz where de
 
 ### View propagation
 we check all pixels p′ of the second view that have our current pixel p as a matching point according to their current disparity.
+
+
+## Results
+![image](https://user-images.githubusercontent.com/62805357/177941158-43412bab-1f79-496a-a7fb-279d6e71d304.png)
